@@ -9,8 +9,8 @@ setup(
         'ipfs_model_manager.orbitdb_kit_lib',
 	],
 	install_requires=[
-        'ipfs_kit@git+https://github.com/endomorphosis/ipfs_kit.git',
-        'orbitdb_kit@git+https://github.com/endomorphosis/orbitdb_kit.git',
+        # 'ipfs_kit@git+https://github.com/endomorphosis/ipfs_kit.git',
+        # 'orbitdb_kit@git+https://github.com/endomorphosis/orbitdb_kit.git',
 		'datasets',
 		'urllib3',
 		'requests',
