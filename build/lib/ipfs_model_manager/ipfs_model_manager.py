@@ -5,8 +5,8 @@ import json
 import pathlib
 import time
 import tempfile
-from ipfs_model_manager.s3_kit.s3_kit import s3_kit
-from ipfs_kit import ipfs_kit
+from .s3_kit import s3_kit
+from ipfs_kit_lib import ipfs_kit
 from ipfs_kit_lib.install_ipfs import install_ipfs as install_ipfs
 import datetime
 import hashlib
