@@ -5,7 +5,7 @@ import json
 import pathlib
 import time
 import tempfile
-from ipfs_model_manager.s3_kit.s3_kit import s3_kit
+from .s3_kit import s3_kit
 from ipfs_kit import ipfs_kit
 from ipfs_kit_lib.install_ipfs import install_ipfs as install_ipfs
 import datetime
@@ -20,9 +20,14 @@ ipfs_lib_dir = os.path.join(parent_dir, "ipfs_kit_lib")
 sys.path.append(ipfs_lib_dir)
 sys.path.append(parent_dir)
 
-class model_manager:
+class ipfs_model_manager():
     def __init__(self, resources=None, meta=None):
-        local_path='/cloudkit_storage/'
+        local_path = '/'
+        if os.geteuid() == 0:
+            local_path='/cloudkit_storage/'
+        else:
+            local_path = os.path.join(os.path.expanduser("~"),'~/cloudkit_storage/')
+        
         self.models = {}
         self.models["s3_models"] = []
         self.models["ipfs_models"] = []
@@ -52,12 +57,14 @@ class model_manager:
                 self.model_history = meta["history"]
             if "role" in meta:
                 self.role = meta["role"]
+            else:
+                self.role = "leecher"
             if "cluster_name" in meta:
                 self.cluster_name = meta["cluster_name"]
             if "local_path" in meta:
                 self.local_path = meta["local_path"]
             else:
-                self.local_path = self.ipfs_path + "cloudkit-models/"
+                self.local_path = local_path + "cloudkit-models/"
             if "s3_cfg" in meta:
                 self.s3cfg = meta["s3_cfg"]
             if "ipfs_path" in meta:
