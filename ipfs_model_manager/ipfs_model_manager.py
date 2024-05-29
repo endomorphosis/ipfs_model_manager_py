@@ -5,15 +5,15 @@ import json
 import pathlib
 import time
 import tempfile
-from s3_kit import s3_kit
-from ipfs_kit_lib import ipfs_kit
+from s3_kit.s3_kit import s3_kit as s3_kit
+from ipfs_kit_lib.ipfs_kit import ipfs_kit as ipfs_kit
 from ipfs_kit_lib.install_ipfs import install_ipfs as install_ipfs
 import datetime
 import hashlib
 import requests
 import shutil
 import random
-import test_fio
+from test_fio import test_fio as test_fio 
 import subprocess
 parent_dir = os.path.dirname(os.path.dirname(__file__))
 ipfs_lib_dir = os.path.join(parent_dir, "ipfs_kit_lib")
@@ -86,7 +86,7 @@ class ipfs_model_manager():
                 if os.geteuid() == 0:
                     self.ipfs_path = "/ipfs/"
                 else:
-                    self.ipfs_path = os.path.join(os.path.join(os.path.expanduser("~"), '.cache'),'ipfs')
+                    self.ipfs_path = os.path.join(os.path.join(os.path.expanduser("~"), '.cache'),'ipfs') + "/"
             if self.role is None:
                 self.role = "leecher"
             if self.cluster_name is None:
@@ -112,10 +112,9 @@ class ipfs_model_manager():
 
         homedir = os.path.expanduser("~")
         homedir_files = os.listdir(homedir)
-        self.test_fio = test_fio.test_fio(None)
-        self.s3_kit  = s3_kit.s3_kit(resources, meta = meta)
-        # self.s3_kit = s3_kit(resources, meta = meta).s3_kit( resources, meta = meta)
-        self.ipfs_kit = ipfs_kit.ipfs_kit(resources, meta = meta)
+        self.test_fio = test_fio(None)
+        self.s3_kit  = s3_kit(resources, meta = meta)
+        self.ipfs_kit = ipfs_kit(resources, meta = meta)
         self.install_ipfs = install_ipfs(resources, meta = meta)
         ipfs_path = self.ipfs_path
         if not os.path.exists(self.ipfs_path):
