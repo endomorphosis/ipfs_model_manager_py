@@ -60,7 +60,7 @@ class test_fio:
         if "dev" not in device:
             command = "df -h " + device
         else:
-            print("location is not device")
+            # print("location is not device")
             if os.getuid() == 0:
                 command = "df -h /"
             else:
@@ -86,7 +86,7 @@ class test_fio:
         if "dev" not in device:
             command = "df -h " + device
         else:
-            print("location is not device")
+            # print("location is not device")
             if os.getuid() == 0:
                 command = "df -h /"
             else:
@@ -114,7 +114,7 @@ class test_fio:
         if "dev" not in device:
             command = "df -h " + device
         else:
-            print("location is not device")
+            # print("location is not device")
             if os.getuid() == 0:
                 command = "df -h /"
             else:

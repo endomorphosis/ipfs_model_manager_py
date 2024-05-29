@@ -83,7 +83,10 @@ class ipfs_model_manager():
         else:
             self.local_path = os.path.join(local_path , "cloudkit-models/")
             if self.ipfs_path is None:
-                self.ipfs_path = "/ipfs/"
+                if os.geteuid() == 0:
+                    self.ipfs_path = "/ipfs/"
+                else:
+                    self.ipfs_path = os.path.join(os.path.join(os.path.expanduser("~"), '.cache'),'ipfs')
             if self.role is None:
                 self.role = "leecher"
             if self.cluster_name is None:
