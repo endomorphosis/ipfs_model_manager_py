@@ -27,16 +27,7 @@ class ipfs_model_manager():
             local_path='/cloudkit_storage/'
         else:
             local_path = os.path.join(os.path.expanduser("~"),'~/cloudkit_storage/')
-        self.s3cfg = None
-        self.ipfs_src = None
-        self.timing = None
-        self.collection_cache = None
-        self.model_history = None
-        self.role = None
-        self.cluster_name = None
-        self.cache = None
-        self.local_path = local_path
-        self.ipfs_path = None
+        
         self.models = {}
         self.models["s3_models"] = []
         self.models["ipfs_models"] = []
@@ -73,31 +64,25 @@ class ipfs_model_manager():
             if "local_path" in meta:
                 self.local_path = meta["local_path"]
             else:
-                self.local_path = os.path.join(local_path, "cloudkit-models")
+                self.local_path = local_path + "cloudkit-models/"
             if "s3_cfg" in meta:
                 self.s3cfg = meta["s3_cfg"]
             if "ipfs_path" in meta:
                 self.ipfs_path = meta["ipfs_path"]
             else:
-                self.ipfs_path = os.path.join(self.local_path , "ipfs")
+                self.ipfs_path = self.local_path + "ipfs/"
         else:
-            self.local_path = os.path.join(local_path , "cloudkit-models/")
-            if self.ipfs_path is None:
-                self.ipfs_path = "/ipfs/"
-            if self.role is None:
-                self.role = "leecher"
-            if self.cluster_name is None:
-                self.cluster_name = "cloudkit_storage"
-            if self.s3cfg is None:
-                self.s3cfg = None
-            if self.cache is None:
-                self.cache = {
-                    "local": "/storage/cloudkit-models/collection.json",
-                    "s3": "s3://huggingface-models/collection.json",
-                    "ipfs": "QmXBUkLywjKGTWNDMgxknk6FJEYu9fZaEepv3djmnEqEqD",
-                    "https": "https://huggingface.co/endomorphosis/cloudkit-collection/resolve/main/collection.json"
-                }
-                
+            self.local_path = local_path + "cloudkit-models/"
+            self.ipfs_path = "/ipfs/"
+            self.s3cfg = None
+            self.role = "leecher"
+            self.cluster_name = "cloudkit_storage"
+            self.cache = {
+                "local": "/storage/cloudkit-models/collection.json",
+                "s3": "s3://huggingface-models/collection.json",
+                "ipfs": "QmXBUkLywjKGTWNDMgxknk6FJEYu9fZaEepv3djmnEqEqD",
+                "https": "https://huggingface.co/endomorphosis/cloudkit-collection/resolve/main/collection.json"
+            }
             meta = {
                 "local_path": self.local_path,
                 "ipfs_path": self.ipfs_path,
