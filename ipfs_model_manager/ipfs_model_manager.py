@@ -5,7 +5,7 @@ import json
 import pathlib
 import time
 import tempfile
-from s3_kit.s3_kit import s3_kit as s3_kit
+from s3_kit import s3_kit as s3_kit
 from ipfs_kit_lib.ipfs_kit import ipfs_kit as ipfs_kit
 from ipfs_kit_lib.install_ipfs import install_ipfs as install_ipfs
 import datetime
