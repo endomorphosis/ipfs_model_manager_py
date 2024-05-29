@@ -5,8 +5,8 @@ import json
 import pathlib
 import time
 import tempfile
-from .s3_kit import s3_kit
-from ipfs_kit import ipfs_kit
+from s3_kit import s3_kit
+from ipfs_kit_lib import ipfs_kit
 from ipfs_kit_lib.install_ipfs import install_ipfs as install_ipfs
 import datetime
 import hashlib
@@ -27,7 +27,16 @@ class ipfs_model_manager():
             local_path='/cloudkit_storage/'
         else:
             local_path = os.path.join(os.path.expanduser("~"),'~/cloudkit_storage/')
-        
+        self.s3cfg = None
+        self.ipfs_src = None
+        self.timing = None
+        self.collection_cache = None
+        self.model_history = None
+        self.role = None
+        self.cluster_name = None
+        self.cache = None
+        self.local_path = local_path
+        self.ipfs_path = None
         self.models = {}
         self.models["s3_models"] = []
         self.models["ipfs_models"] = []
@@ -64,25 +73,31 @@ class ipfs_model_manager():
             if "local_path" in meta:
                 self.local_path = meta["local_path"]
             else:
-                self.local_path = local_path + "cloudkit-models/"
+                self.local_path = os.path.join(local_path, "cloudkit-models")
             if "s3_cfg" in meta:
                 self.s3cfg = meta["s3_cfg"]
             if "ipfs_path" in meta:
                 self.ipfs_path = meta["ipfs_path"]
             else:
-                self.ipfs_path = self.local_path + "ipfs/"
+                self.ipfs_path = os.path.join(self.local_path , "ipfs")
         else:
-            self.local_path = self.ipfs_path + "cloudkit-models/"
-            self.ipfs_path = "/ipfs/"
-            self.s3cfg = None
-            self.role = "leecher"
-            self.cluster_name = "cloudkit_storage"
-            self.cache = {
-                "local": "/storage/cloudkit-models/collection.json",
-                "s3": "s3://huggingface-models/collection.json",
-                "ipfs": "QmXBUkLywjKGTWNDMgxknk6FJEYu9fZaEepv3djmnEqEqD",
-                "https": "https://huggingface.co/endomorphosis/cloudkit-collection/resolve/main/collection.json"
-            }
+            self.local_path = os.path.join(local_path , "cloudkit-models/")
+            if self.ipfs_path is None:
+                self.ipfs_path = "/ipfs/"
+            if self.role is None:
+                self.role = "leecher"
+            if self.cluster_name is None:
+                self.cluster_name = "cloudkit_storage"
+            if self.s3cfg is None:
+                self.s3cfg = None
+            if self.cache is None:
+                self.cache = {
+                    "local": "/storage/cloudkit-models/collection.json",
+                    "s3": "s3://huggingface-models/collection.json",
+                    "ipfs": "QmXBUkLywjKGTWNDMgxknk6FJEYu9fZaEepv3djmnEqEqD",
+                    "https": "https://huggingface.co/endomorphosis/cloudkit-collection/resolve/main/collection.json"
+                }
+                
             meta = {
                 "local_path": self.local_path,
                 "ipfs_path": self.ipfs_path,
@@ -95,8 +110,9 @@ class ipfs_model_manager():
         homedir = os.path.expanduser("~")
         homedir_files = os.listdir(homedir)
         self.test_fio = test_fio.test_fio(None)
-        self.s3_kit = s3_kit(resources, meta = meta)
-        self.ipfs_kit = ipfs_kit(resources, meta = meta)
+        self.s3_kit  = s3_kit.s3_kit(resources, meta = meta)
+        # self.s3_kit = s3_kit(resources, meta = meta).s3_kit( resources, meta = meta)
+        self.ipfs_kit = ipfs_kit.ipfs_kit(resources, meta = meta)
         self.install_ipfs = install_ipfs(resources, meta = meta)
         ipfs_path = self.ipfs_path
         if not os.path.exists(self.ipfs_path):
@@ -1743,4 +1759,8 @@ class ipfs_model_manager():
         self.evict_expired_models()
         self.evict_zombies()
         return self
+
+if __name__ == '__main__':
+    model_manager = ipfs_model_manager()
+    model_manager.test()
     

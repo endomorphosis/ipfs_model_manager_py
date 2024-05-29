@@ -7,7 +7,7 @@ import io
 import tempfile
 import json
 
-class s3_kit:
+class s3_kit():
 	def __init__(self, resources, meta=None):
 		self.bucket = None
 		self.bucket_files = None
