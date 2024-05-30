@@ -114,9 +114,17 @@ class ipfs:
 
 		if(os.geteuid() != 0 or ipfs_ready == False):
 			try:
-				command2 = "ps -ef | grep ipfs | grep daemon | grep -v grep | awk '{print $2}' | xargs kill -9" 
+				command2 = "ps -ef | grep ipfs | grep daemon | grep -v grep | awk '{print $2}'| xargs echo"
 				results2 = subprocess.check_output(command2, shell=True)
-				results2 = results2.decode()            
+				results2 = results2.decode()
+				results2 = results2.split("\n")
+				if results2 != "" and len(results2) > 0:
+					for i in range(len(results2)):
+						if results2[i] != "":
+							command3 = "kill -9 " + results2[i]
+							results3 = subprocess.check_output(command2, shell=True)
+							results3 = results2.decode()           
+							 
 			except Exception as error:
 				results2 = str(error)
 			finally:

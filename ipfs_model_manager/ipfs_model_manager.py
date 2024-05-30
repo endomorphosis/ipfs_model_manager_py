@@ -8,6 +8,7 @@ import tempfile
 from s3_kit import s3_kit as s3_kit
 from ipfs_kit_lib.ipfs_kit import ipfs_kit as ipfs_kit
 from ipfs_kit_lib.install_ipfs import install_ipfs as install_ipfs
+from aria2.install_aria2 import install_aria2 as install_aria2
 import datetime
 import hashlib
 import requests
@@ -98,7 +99,8 @@ class ipfs_model_manager():
                     "local": "/storage/cloudkit-models/collection.json",
                     "s3": "s3://huggingface-models/collection.json",
                     "ipfs": "QmXBUkLywjKGTWNDMgxknk6FJEYu9fZaEepv3djmnEqEqD",
-                    "https": "https://huggingface.co/endomorphosis/cloudkit-collection/resolve/main/collection.json"
+                    "https": "https://huggingface.co/endomorphosis/cloudkit-collection/resolve/main/collection.json",
+                    "orbitdb": "/orbitdb/zdpuB31L6gJz49erikZSQT3A1erJbid8oUTBrjLtBwjjXe3R5"
                 }
                 
             meta = {
@@ -113,7 +115,7 @@ class ipfs_model_manager():
         homedir = os.path.expanduser("~")
         homedir_files = os.listdir(homedir)
         self.test_fio = test_fio(None)
-        self.s3_kit  = s3_kit(resources, meta = meta)
+        self.s3_kit  = s3_kit.s3_kit(resources, meta = meta)
         self.ipfs_kit = ipfs_kit(resources, meta = meta)
         self.install_ipfs = install_ipfs(resources, meta = meta)
         ipfs_path = self.ipfs_path
@@ -122,6 +124,14 @@ class ipfs_model_manager():
         if not os.path.exists(self.local_path):
             os.makedirs(self.local_path)
         ipfs_path_files = os.listdir(ipfs_path)
+        aria2c = os.system("which aria2c")
+        if aria2c != 0:
+            if os.geteuid() == 0:
+                os.system("apt-get update")
+                os.system("apt-get install aria2")
+            else:
+                install_aria2().install()
+                pass
         # NOTE there is no systemctl daemon reload.
         # NOTE: Changed or to and in this if so install only runs if there is no ipfs in any of the possible locations
         # NOTE: make sure all instances of IPFS daemon are started either as a service or with os.system() or with process.popen()
