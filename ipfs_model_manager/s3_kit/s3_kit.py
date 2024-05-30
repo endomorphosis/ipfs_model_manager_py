@@ -26,10 +26,10 @@ class s3_kit():
 		self.mk_dir = self.s3_mk_dir
 		self.get_session = self.get_session
 		if meta is not None:
-			if "s3cfg" in meta:
-				if meta['s3cfg'] is not None:
-					self.config = meta['s3cfg']
-					self.get_session(meta['s3cfg'])
+			if "s3_cfg" in meta:
+				if meta['s3_cfg'] is not None:
+					self.config = meta['s3_cfg']
+					self.get_session(meta['s3_cfg'])
 
 	def __call__(self, method, **kwargs):
 		if method == 'ls_dir':

@@ -93,7 +93,12 @@ class ipfs_model_manager():
             if self.cluster_name is None:
                 self.cluster_name = "cloudkit_storage"
             if self.s3cfg is None:
-                self.s3cfg = None
+                self.s3cfg = {
+                    "accessKey": "access_key",
+                    "secretKey": "secret_key",
+                    "bucket": "cloudkit",
+                    "endpoint": "https://s3-us-west-2.amazonaws.com",
+                }
             if self.cache is None:
                 self.cache = {
                     "local": "/storage/cloudkit-models/collection.json",
@@ -124,7 +129,10 @@ class ipfs_model_manager():
         if not os.path.exists(self.local_path):
             os.makedirs(self.local_path)
         ipfs_path_files = os.listdir(ipfs_path)
-        aria2c = os.system("which aria2c")
+        this_dir = os.path.dirname(os.path.realpath(__file__))
+        aria2_dir = os.path.join(this_dir, "aria2")
+        aria2_append_path = "PATH=$PATH:"+aria2_dir + " "
+        aria2c = os.system(aria2_append_path + "which aria2c")
         if aria2c != 0:
             if os.geteuid() == 0:
                 os.system("apt-get update")
