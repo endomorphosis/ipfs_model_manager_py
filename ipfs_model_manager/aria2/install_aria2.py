@@ -41,7 +41,11 @@ class install_aria2:
         return results
 
     def test_aria2(self):
-        results = os.system("aria2c --version")
+        this_dir = os.path.dirname(os.path.realpath(__file__))
+        parent_dir = os.path.abspath(os.path.join(this_dir, os.pardir))
+        aria2_dir = os.path.join(parent_dir, "aria2")
+        aria2_append_path = "PATH=$PATH:"+aria2_dir + " "
+        results = os.system(aria2_append_path + "aria2c --version")
         return results
     
 if __name__ == "__main__":

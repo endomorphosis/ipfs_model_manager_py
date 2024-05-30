@@ -47,6 +47,7 @@ class ipfs_model_manager():
         self.s3_collection = {}
         self.local_collection = {}
         self.https_collection = {}
+        self.orbitdb_collection = {}
         self.pinned = []
         self.fastest = None
         self.bandwidth = None
@@ -92,22 +93,30 @@ class ipfs_model_manager():
                 self.role = "leecher"
             if self.cluster_name is None:
                 self.cluster_name = "cloudkit_storage"
+            if self.timing is None:
+                self.timing = { 
+                    "local_time": 0,
+                    "ipfs_time": 0,
+                    "s3_time": 0,
+                    "https_time": 0,
+                    }
             if self.s3cfg is None:
                 self.s3cfg = {
-                    "accessKey": "access_key",
-                    "secretKey": "secret_key",
-                    "bucket": "cloudkit",
-                    "endpoint": "https://s3-us-west-2.amazonaws.com",
+                    "accessKey": "",
+                    "secretKey": "",
+                    "bucket": "",
+                    "endpoint": "",
                 }
             if self.cache is None:
-                self.cache = {
+                self.collection_cache = {
                     "local": "/storage/cloudkit-models/collection.json",
                     "s3": "s3://huggingface-models/collection.json",
                     "ipfs": "QmXBUkLywjKGTWNDMgxknk6FJEYu9fZaEepv3djmnEqEqD",
                     "https": "https://huggingface.co/endomorphosis/cloudkit-collection/resolve/main/collection.json",
                     "orbitdb": "/orbitdb/zdpuB31L6gJz49erikZSQT3A1erJbid8oUTBrjLtBwjjXe3R5"
                 }
-                
+            else:
+                self.collection_cache = self.cache
             meta = {
                 "local_path": self.local_path,
                 "ipfs_path": self.ipfs_path,
@@ -120,7 +129,8 @@ class ipfs_model_manager():
         homedir = os.path.expanduser("~")
         homedir_files = os.listdir(homedir)
         self.test_fio = test_fio(None)
-        self.s3_kit  = s3_kit.s3_kit(resources, meta = meta)
+        if self.s3cfg is not None and type(self.s3cfg) == dict and self.s3cfg["bucket"] is not None and self.s3cfg["bucket"] != "":
+            self.s3_kit = s3_kit(resources, meta = meta)
         self.ipfs_kit = ipfs_kit(resources, meta = meta)
         self.install_ipfs = install_ipfs(resources, meta = meta)
         ipfs_path = self.ipfs_path
@@ -220,6 +230,7 @@ class ipfs_model_manager():
             return self.test(**kwargs)
 
     def load_collection(self, **kwargs):
+
         try:
             self.https_collection = self.download_https('https://huggingface.co/endomorphosis/cloudkit-collection/resolve/main/collection.json', "/tmp/")
             with open(self.https_collection, 'r') as f:
@@ -227,6 +238,29 @@ class ipfs_model_manager():
         except Exception as e:
             self.https_collection = e
             pass
+
+        if self.s3cfg is not None and type(self.s3cfg) == dict and self.s3cfg["bucket"] is not None and self.s3cfg["bucket"] != "":
+            try:
+                with tempfile.NamedTemporaryFile(suffix=".json", dir="/tmp") as this_temp_file:
+                    self.s3_kit.s3_dl_file('collection.json', this_temp_file.name, self.s3cfg["bucket"])
+                    with open(this_temp_file.name, 'r') as f:
+                        self.s3_collection = json.load(f)
+            except Exception as e:
+                self.s3_collection = e
+                pass
+            if os.path.exists(os.path.join(self.ipfs_path,"collection.json")): 
+                with open(os.path.join(self.ipfs_path,"collection.json"), 'r') as f:
+                    self.local_collection = json.load(f)
+
+        try:
+            ipfs_stop = self.ipfs_kit.ipfs_kit_stop()
+        except Exception as e:
+            ipfs_stop = e
+        try:
+            ipfs_start = self.ipfs_kit.ipfs_kit_start()
+        except Exception as e:
+            ipfs_start = e
+
         try:
             with tempfile.NamedTemporaryFile(suffix=".json", dir="/tmp") as this_temp_file:
                 results = self.ipfs_kit.ipfs_get(self.ipfs_src, this_temp_file.name)
@@ -237,31 +271,14 @@ class ipfs_model_manager():
                     self.ipfs_collection = {
                         "error": "no results"
                     }
-
         except Exception as e:
             self.ipfs_collection = {
                 "error": str(e)
             }
             pass
-        try:
-            with tempfile.NamedTemporaryFile(suffix=".json", dir="/tmp") as this_temp_file:
-                self.s3_kit.s3_dl_file('collection.json', this_temp_file.name, self.s3cfg["bucket"])
-                with open(this_temp_file.name, 'r') as f:
-                    self.s3_collection = json.load(f)
-        except Exception as e:
-            self.s3_collection = e
-            pass
-        if os.path.exists(os.path.join(self.ipfs_path,"collection.json")): 
-            with open(os.path.join(self.ipfs_path,"collection.json"), 'r') as f:
-                self.local_collection = json.load(f)
-        try:
-            ipfs_stop = self.ipfs_kit.ipfs_kit_stop()
-        except Exception as e:
-            ipfs_stop = e
-        try:
-            ipfs_start = self.ipfs_kit.ipfs_kit_start()
-        except Exception as e:
-            ipfs_start = e
+
+
+
 
         return {
             "ipfs_stop": ipfs_stop,
@@ -269,7 +286,8 @@ class ipfs_model_manager():
             "ipfs_collection": self.ipfs_collection,
             "s3_collection": self.s3_collection,
             "local_collection": self.local_collection,
-            "https_collection": self.https_collection
+            "https_collection": self.https_collection,
+            "orbitdb_collection": self.orbitdb_collection,
         }
        
     def download_https(self, https_src, model_path, **kwargs):
@@ -297,7 +315,10 @@ class ipfs_model_manager():
         with tempfile.NamedTemporaryFile(suffix=suffix, dir="/tmp", delete=False) as this_temp_file:
             file_metadata = os.stat(this_temp_file.name)
             tmp_filename = this_temp_file.name.split("/")[-1]
-            command =  "aria2c -x 16 "+https_src+" -d /tmp -o "+ tmp_filename +" --allow-overwrite=true "
+            this_dir = os.path.dirname(os.path.realpath(__file__))
+            aria2_dir = os.path.join(this_dir, "aria2")
+            aria2_append_path = "PATH=$PATH:"+aria2_dir + " "
+            command =  aria2_append_path + "aria2c -x 16 "+https_src+" -d /tmp -o "+ tmp_filename +" --allow-overwrite=true "
             os.system(command)
             if os.path.exists(dst_path):
                 command2 = "rm " + dst_path
@@ -662,6 +683,8 @@ class ipfs_model_manager():
     def load_collection_cache(self, **kwargs):
         if "cache" in kwargs:
             cache = kwargs["cache"]
+        elif "collection_cache" in self.__dict__:
+            cache = self.collection_cache
         else:
             cache = {
                 "local": "/storage/cloudkit-models/collection.json",
@@ -1060,7 +1083,10 @@ class ipfs_model_manager():
             local_keys = list(self.local_collection.keys())
         if self.https_collection != None and type(self.s3_collection) == dict:
             https_keys = list(self.https_collection.keys())
-        all_keys = ipfs_keys + s3_keys + local_keys + https_keys
+        # if self.orbitdb_collection != None and type(self.orbitdb_collection) == dict:
+        #     orbitdb_keys = list(self.orbitdb_collection.keys())
+
+        all_keys = ipfs_keys + s3_keys + local_keys + https_keys #+ orbitdb_keys
         all_keys = list(set(all_keys))
         ## filter the list all_keys to remove "cache" and "error"
         if "cache" in all_keys:
@@ -1424,6 +1450,8 @@ class ipfs_model_manager():
                 self.models["local_models"] = self.ls_local_models()
             elif src == "https":
                 self.models["https_models"] = self.ls_https_models()
+            elif src == "orbitdb":
+                self.models["orbitdb_models"] = self.ls_orbitdb_models()
         else:                    
             if self.last_update < ten_days_ago:
                 self.load_collection()
@@ -1431,6 +1459,7 @@ class ipfs_model_manager():
                 self.models["ipfs_models"] = self.ls_ipfs_models()
                 self.models["local_models"] = self.ls_local_models()
                 self.models["https_models"] = self.ls_https_models()
+                self.models["orbitdb_models"] = self.ls_orbitdb_models()
                 self.ipfs_pinset = self.ipfs_kit.ipfs_get_pinset()
                 #del self.models["s3Models"]
                 #del self.models["ipfsModels"]
@@ -1609,11 +1638,11 @@ class ipfs_model_manager():
                 for file in this_folder_data:
                     collection_files.append(this_folder_name + file)
 
-        s3_files = self.s3_kit.s3_ls_dir("",self.s3cfg["bucket"])
-
-        s3_file_names = []
-        for file in s3_files:
-            s3_file_names.append(file["key"])
+        if self.s3cfg != None and "bucket" in self.s3cfg and self.s3cfg["bucket"] != None and self.s3cfg["bucket"] != "":
+            s3_files = self.s3_kit.s3_ls_dir("",self.s3cfg["bucket"])
+            s3_file_names = []
+            for file in s3_files:
+                s3_file_names.append(file["key"])
         
         ipfs_files = self.ipfs_kit.ipfs_ls_path("/")
         ipfs_file_names = []
@@ -1622,9 +1651,10 @@ class ipfs_model_manager():
 
         collection_pins = self.collection_pins
         
+        if self.s3cfg != None and "bucket" in self.s3cfg and self.s3cfg["bucket"] != None and self.s3cfg["bucket"] != "":
+            compare_s3_files = [x for x in s3_file_names if x not in collection_files]
+            zombies["s3"] = compare_s3_files
 
-        compare_s3_files = [x for x in s3_file_names if x not in collection_files]
-        zombies["s3"] = compare_s3_files
         compare_local_files = [x for x in ls_local_files if x not in collection_files]
         zombies["local"] = compare_local_files
         compare_ipfs_files = [x for x in ipfs_file_names if x not in collection_files]
