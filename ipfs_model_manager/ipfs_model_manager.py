@@ -5,10 +5,12 @@ import json
 import pathlib
 import time
 import tempfile
+from config import config
 from s3_kit import s3_kit as s3_kit
 from ipfs_kit_lib.ipfs_kit import ipfs_kit as ipfs_kit
 from ipfs_kit_lib.install_ipfs import install_ipfs as install_ipfs
 from aria2.install_aria2 import install_aria2 as install_aria2
+from orbitdb_kit_lib import orbitdb_kit as orbitdb_kit
 import datetime
 import hashlib
 import requests
@@ -27,7 +29,14 @@ class ipfs_model_manager():
         if os.geteuid() == 0:
             local_path='/cloudkit_storage/'
         else:
-            local_path = os.path.join(os.path.expanduser("~"),'~/cloudkit_storage/')
+            local_path = os.path.join(os.path.expanduser("~"),'.cache')
+        self.config = config().loadConfig('./ipfs_model_manager/config/config.toml')
+        if len(list(self.config.keys())) > 0:
+            for key in list(self.config.keys()):
+                if meta == None:
+                    meta = {}
+                meta[key.lower()] = self.config[key]
+
         self.s3cfg = None
         self.ipfs_src = None
         self.timing = None
@@ -57,37 +66,51 @@ class ipfs_model_manager():
         self.s3cfg = None
         self.orbitdb_kit = None
         if meta is not None and type (meta) == dict:
-            if "orbitdb_kit" in meta:
-                self.orbitdb_kit = meta["orbitdb_kit"]
-            else:
-                from orbitdb_kit import orbitdb_kit as orbitdb_kit
-                self.orbitdb_kit = orbitdb_kit(resources, meta = meta)  
             if "s3cfg" in meta:
                 self.s3cfg = meta["s3cfg"]
             if "ipfs_src" in meta:
                 self.ipfs_src = meta["ipfs_src"]
             if "timing" in meta:
                 self.timing = meta["timing"]
+            else:
+                self.timing = { 
+                    "local_time": 0,
+                    "ipfs_time": 0,
+                    "s3_time": 0,
+                    "https_time": 0,
+                    }
             if "cache" in meta:
                 self.collection_cache = meta["cache"]
             if "history" in meta:
                 self.model_history = meta["history"]
+            else:
+                self.model_history = {}
             if "role" in meta:
                 self.role = meta["role"]
             else:
                 self.role = "leecher"
             if "cluster_name" in meta:
                 self.cluster_name = meta["cluster_name"]
-            if "local_path" in meta:
-                self.local_path = meta["local_path"]
             else:
-                self.local_path = os.path.join(local_path, "cloudkit-models")
-            if "s3_cfg" in meta:
-                self.s3cfg = meta["s3_cfg"]
-            if "ipfs_path" in meta:
+                self.cluster_name = "cloudkit_storage"
+            if "ipfs_path" in meta and meta["ipfs_path"] != "" and os.path.exists(meta["ipfs_path"]):
                 self.ipfs_path = meta["ipfs_path"]
             else:
                 self.ipfs_path = os.path.join(self.local_path , "ipfs")
+            if "local_path" in meta and meta["local_path"] != "" and os.path.exists(meta["local_path"]):
+                self.local_path = meta["local_path"]
+            else:
+                self.local_path = os.path.join(local_path, "huggingface", "hub")
+            if "s3_cfg" in meta:
+                self.s3cfg = meta["s3_cfg"]
+            meta = {
+                "local_path": self.local_path,
+                "ipfs_path": self.ipfs_path,
+                "s3_cfg": self.s3cfg,
+                "role": self.role,
+                "cluster_name": self.cluster_name,
+                "cache": self.cache,
+            }
         else:
             self.local_path = os.path.join(local_path , "cloudkit-models/")
             if self.ipfs_path is None:
@@ -134,6 +157,7 @@ class ipfs_model_manager():
 
         homedir = os.path.expanduser("~")
         homedir_files = os.listdir(homedir)
+        self.orbitdb_kit = orbitdb_kit(resources, meta = meta)
         self.test_fio = test_fio(None)
         if self.s3cfg is not None and type(self.s3cfg) == dict and self.s3cfg["bucket"] is not None and self.s3cfg["bucket"] != "":
             self.s3_kit = s3_kit(resources, meta = meta)
@@ -691,7 +715,7 @@ class ipfs_model_manager():
     def load_collection_cache(self, **kwargs):
         if "cache" in kwargs:
             cache = kwargs["cache"]
-        elif "collection_cache" in self.__dict__:
+        elif "collection_cache" in self.__dict__ and self.collection_cache is not None:
             cache = self.collection_cache
         else:
             cache = {
