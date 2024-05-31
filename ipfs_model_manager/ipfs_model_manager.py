@@ -55,7 +55,13 @@ class ipfs_model_manager():
         self.this_model = None
         self.this_model_name = None
         self.s3cfg = None
+        self.orbitdb_kit = None
         if meta is not None and type (meta) == dict:
+            if "orbitdb_kit" in meta:
+                self.orbitdb_kit = meta["orbitdb_kit"]
+            else:
+                from orbitdb_kit import orbitdb_kit as orbitdb_kit
+                self.orbitdb_kit = orbitdb_kit(resources, meta = meta)  
             if "s3cfg" in meta:
                 self.s3cfg = meta["s3cfg"]
             if "ipfs_src" in meta:
