@@ -142,7 +142,8 @@ class ipfs_model_manager():
         this_dir = os.path.dirname(os.path.realpath(__file__))
         aria2_dir = os.path.join(this_dir, "aria2")
         aria2_append_path = "PATH=$PATH:"+aria2_dir + " "
-        aria2c = os.system(aria2_append_path + "which aria2c")
+        ara2_command = aria2_append_path + "aria2c --version"
+        aria2c = subprocess.Popen(ara2_command, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).wait()
         if aria2c != 0:
             if os.geteuid() == 0:
                 os.system("apt-get update")
@@ -319,7 +320,8 @@ class ipfs_model_manager():
             aria2_dir = os.path.join(this_dir, "aria2")
             aria2_append_path = "PATH=$PATH:"+aria2_dir + " "
             command =  aria2_append_path + "aria2c -x 16 "+https_src+" -d /tmp -o "+ tmp_filename +" --allow-overwrite=true "
-            os.system(command)
+            #os.system(command)
+            subprocess.Popen(command, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             if os.path.exists(dst_path):
                 command2 = "rm " + dst_path
                 os.system(command2)
@@ -704,12 +706,16 @@ class ipfs_model_manager():
                 shutil.rmtree("./collection.json")
             if os.path.exists(https_download):
                 with open(https_download, 'r') as f:
-                    this_collection = json.load(f)
-                    self.https_collection = this_collection
+                    download_data = f.read()
+                    if len(download_data) > 0:
+                        this_collection = json.loads(download_data)
+                        self.https_collection = this_collection
             elif os.path.exists('/tmp/collection.json'):
                 with open('/tmp/collection.json', 'r') as f:
-                    this_collection = json.load(f)
-                    self.https_collection = this_collection
+                    download_data = f.read()
+                    if len(download_data) > 0:
+                        this_collection = json.loads(download_data)
+                        self.https_collection = this_collection
         except Exception as e:
             print(e)
             pass
@@ -717,8 +723,10 @@ class ipfs_model_manager():
         try:
             ipfs_download = self.download_ipfs(cache["ipfs"], '/tmp/collection.json')
             with open(ipfs_download, 'r') as f:
-                this_collection = json.load(f)
-                self.ipfs_collection = this_collection
+                download_data = f.read()
+                if len(download_data) > 0:
+                    this_collection = json.loads(download_data)
+                    self.ipfs_collection = this_collection
         except Exception as e:
             ipfs_download = None
             print(e)
@@ -726,9 +734,12 @@ class ipfs_model_manager():
         timestamp_2 = time.time()
         try:
             s3_download = self.download_s3(cache["s3"], '/tmp/collection.json')
-            with open(s3_download, 'r') as f:
-                this_collection = json.load(f)
-                self.s3_collection = this_collection
+            if s3_download is not None and self.s3cfg is not None and type(self.s3cfg) == dict and self.s3cfg["bucket"] is not None and self.s3cfg["bucket"] != "":
+                with open(s3_download, 'r') as f:
+                    download_data = f.read()
+                    if len(download_data) > 0:
+                        this_collection = json.loads(download_data)
+                        self.s3_collection = this_collection
         except Exception as e:
             s3_download = None
             print(e)
@@ -810,8 +821,10 @@ class ipfs_model_manager():
             self.collection = self.__dict__[object_name]
         if os.path.exists(cache["local"]):
             with open(cache["local"], 'r') as f:
-                collection = json.load(f)
-                self.local_collection = collection
+                download_data = f.read()
+                if len(download_data) > 0:
+                    collection = json.loads(download_data)
+                    self.local_collection = collection
         return self.collection 
 
     def auto_download(self, manifest, **kwargs):
@@ -902,16 +915,22 @@ class ipfs_model_manager():
         }
         download_src = None
         fastest = min(timestamps, key=timestamps.get)
-        while test[fastest] == False or test[fastest] != True:
-            timestamps.pop(fastest)
-            fastest = min(timestamps, key=timestamps.get)
+        while (test[fastest] == False or test[fastest] != True) and  len(list(timestamps.keys())) > 0:
+            timestamp_len = len(list(timestamps.keys()))
+            if timestamp_len > 1:
+                timestamps.pop(fastest)
+                fastest = min(timestamps, key=timestamps.get)
+            else:
+                fastest = list(timestamps.keys())[0]
+                break
         if test[fastest] == True:
             download_src = fastest
         else:
             download_src = None
             pass
         if download_src is None:
-            raise Exception("Model not found")
+            # raise Exception("Model not found in any cache " + manifest["id"])
+            print("Model not found in any cache " + manifest["id"])
         else:
             file_list = this_model_manifest_folder_data.keys()
             file_success = {}
@@ -1591,7 +1610,10 @@ class ipfs_model_manager():
                 self.history_models[model] = None
             
             if self.history_models[model] is not None:
-                this_model_timestamp = datetime.datetime.timestamp(self.history[model])
+                if type(self.history_models[model]) == str:
+                    this_model_timestamp = datetime.datetime.timestamp(self.history_models[model])                
+                elif type(self.history_models[model]) == float:
+                    this_model_timestamp = self.history_models[model]
                 if current_timestamp - this_model_timestamp > 60:
                     self.history_models[model] = None
 
@@ -1654,13 +1676,15 @@ class ipfs_model_manager():
         if self.s3cfg != None and "bucket" in self.s3cfg and self.s3cfg["bucket"] != None and self.s3cfg["bucket"] != "":
             compare_s3_files = [x for x in s3_file_names if x not in collection_files]
             zombies["s3"] = compare_s3_files
+        else:
+            zombies["s3"] = []
 
         compare_local_files = [x for x in ls_local_files if x not in collection_files]
-        zombies["local"] = compare_local_files
         compare_ipfs_files = [x for x in ipfs_file_names if x not in collection_files]
         compare_ipfs_pins = [x for x in collection_pins if x not in self.ipfs_pinset]
-        zombies["ipfs"] = compare_ipfs_pins
-        zombies["ipfs_files"] = compare_ipfs_files
+        # zombies["ipfs"] = compare_ipfs_pins
+        zombies["local"] = compare_local_files
+        zombies["ipfs"] = compare_ipfs_files
         self.zombies = zombies
         return zombies
     
@@ -1730,7 +1754,11 @@ class ipfs_model_manager():
         
         for model in list(self.history_models.keys()):
             current_time = datetime.datetime.now().timestamp()
-            time_delta = current_time - self.history_models[model]
+            if self.history_models[model] == None:
+                time_delta = 0
+            else:
+                time_delta = current_time - self.history_models[model]
+
             if time_delta < self.timing["local_time"]:
                 if "local_models" in list(self.models.keys()):
                     if model not in list(self.models["local_models"].keys()):
@@ -1763,12 +1791,13 @@ class ipfs_model_manager():
                 self.download_model(model)
                 self.models["local_models"][model] = datetime.datetime.now().timestamp()    
         for model in not_found["s3"]:
-            if model in self.pinned_models:
-                self.s3_kit.s3_ul_dir(self.local_path + "/" + model, self.s3cfg["bucket"], self.models["s3_models"][model]["folderData"])
-                self.models["s3_models"][model] = datetime.datetime.now().timestamp()
-            elif self.history_models[model] > current_timestamp - self.timing["s3_time"]:
-                self.s3_kit.s3_ul_dir(self.local_path + "/" + model, self.s3cfg["bucket"], self.models["s3_models"][model]["folderData"])
-                self.models["s3_models"][model] = datetime.datetime.now().timestamp()
+            if self.s3cfg != None and "bucket" in self.s3cfg and self.s3cfg["bucket"] != None and self.s3cfg["bucket"] != "":
+                if model in self.pinned_models:
+                    self.s3_kit.s3_ul_dir(self.local_path + "/" + model, self.s3cfg["bucket"], self.models["s3_models"][model]["folderData"])
+                    self.models["s3_models"][model] = datetime.datetime.now().timestamp()
+                elif self.history_models[model] > current_timestamp - self.timing["s3_time"]:
+                    self.s3_kit.s3_ul_dir(self.local_path + "/" + model, self.s3cfg["bucket"], self.models["s3_models"][model]["folderData"])
+                    self.models["s3_models"][model] = datetime.datetime.now().timestamp()
         return None
 
     def evict_expired_models(self, **kwargs):
@@ -1789,6 +1818,37 @@ class ipfs_model_manager():
         for file in zombies["s3"]:
             self.s3_kit.s3_rm_file(file, self.s3cfg["bucket"])
         return None
+    
+    def start(self, **kwargs):
+        self.load_collection_cache()
+        self.state()
+        #self.state(src = "s3")
+        #self.state(src = "local")
+        #self.state(src = "ipfs")
+        #self.state(src = "orbitdb")
+        #self.state(src = "https")
+        self.check_pinned_models()
+        self.check_history_models()
+        self.rand_history()
+        self.check_zombies()
+        self.check_expired()
+        self.check_not_found()
+        return self.loop()
+    
+    def loop(self, **kwargs):
+
+        while True:
+            self.loop_sleep = 5
+            self.check_pinned_models()
+            self.check_history_models()
+            self.check_zombies()
+            self.check_expired()
+            self.check_not_found()
+            self.download_missing()
+            self.evict_expired_models()
+            self.evict_zombies()
+            time.sleep(self.loop_sleep)
+        return self
 
     def test(self, **kwargs):
         self.load_collection_cache()
@@ -1796,6 +1856,7 @@ class ipfs_model_manager():
         #self.state(src = "s3")
         self.state(src = "local")
         #self.state(src = "ipfs")
+        #self.state(src = "orbitdb")
         #self.state(src = "https")
         self.check_pinned_models()
         self.check_history_models()
@@ -1812,5 +1873,5 @@ class ipfs_model_manager():
 
 if __name__ == '__main__':
     model_manager = ipfs_model_manager()
-    model_manager.test()
+    model_manager.start()
     
