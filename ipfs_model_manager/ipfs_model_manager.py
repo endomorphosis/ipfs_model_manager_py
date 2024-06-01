@@ -31,12 +31,6 @@ class ipfs_model_manager():
         else:
             local_path = os.path.join(os.path.expanduser("~"),'.cache')
         self.config = config().loadConfig('./ipfs_model_manager/config/config.toml')
-        if len(list(self.config.keys())) > 0:
-            for key in list(self.config.keys()):
-                if meta == None:
-                    meta = {}
-                meta[key.lower()] = self.config[key]
-
         self.s3cfg = None
         self.ipfs_src = None
         self.timing = None
@@ -136,9 +130,9 @@ class ipfs_model_manager():
                     "bucket": "",
                     "endpoint": "",
                 }
-            if self.cache is None:
+            if self.collection_cache is None:
                 self.collection_cache = {
-                    "local": "/storage/cloudkit-models/collection.json",
+                    "local":    "/storage/cloudkit-models/collection.json",
                     "s3": "s3://huggingface-models/collection.json",
                     "ipfs": "QmXBUkLywjKGTWNDMgxknk6FJEYu9fZaEepv3djmnEqEqD",
                     "https": "https://huggingface.co/endomorphosis/cloudkit-collection/resolve/main/collection.json",
@@ -154,6 +148,12 @@ class ipfs_model_manager():
                 "cluster_name": self.cluster_name,
                 "cache": self.cache,
             }
+
+        if len(list(self.config.keys())) > 0:
+            for key in list(self.config.keys()):
+                if meta == None:
+                    meta = {}
+                meta[key.lower()] = self.config[key]
 
         homedir = os.path.expanduser("~")
         homedir_files = os.listdir(homedir)
@@ -482,6 +482,7 @@ class ipfs_model_manager():
         s3_timestamp = None
         local_timestamp = None
         https_timestamp = None
+        orbitdb_timestamp = None
 
         if type(self.ipfs_collection) == dict and "cache" in list(self.ipfs_collection.keys()):
             if "timestamp" in self.ipfs_collection["cache"]:
@@ -507,12 +508,18 @@ class ipfs_model_manager():
                 https_timestamp = self.https_collection["cache"]["timestamp"]
             if https_timestamp is None:
                 https_timestamp = datetime.datetime.now().timestamp()
+        if type(self.orbitdb_collection) == dict and "cache" in list(self.orbitdb_collection.keys()):
+            if "timestamp" in self.orbitdb_collection["cache"]:
+                orbitdb_timestamp = self.orbitdb_collection["cache"]["timestamp"]
+            if orbitdb_timestamp is None:
+                orbitdb_timestamp = datetime.datetime.now().timestamp()
 
         timestamps = {
             "ipfs": ipfs_timestamp,
             "s3": s3_timestamp,
             "local": local_timestamp,
-            "https": https_timestamp
+            "https": https_timestamp,
+            "orbitdb": orbitdb_timestamp
         }
 
         if not all(value is None for value in timestamps.values()):
@@ -525,6 +532,7 @@ class ipfs_model_manager():
         s3_model_data = None
         local_model_data = None
         https_model_data = None
+        orbitdb_model_data = None
     
         if type(self.ipfs_collection) == dict and model in self.ipfs_collection:
             ipfs_model_data = self.ipfs_collection[model]
@@ -542,12 +550,17 @@ class ipfs_model_manager():
             https_model_data = self.https_collection[model]
         else:
             https_model_data = None
+        if type(self.orbitdb_collection) == dict and model in self.orbitdb_collection:
+            orbitdb_model_data = self.orbitdb_collection[model]
+        else:
+            orbitdb_model_data = None
 
         model_data = {
             "ipfs": ipfs_model_data,
             "s3": s3_model_data,
             "local": local_model_data,
-            "https": https_model_data
+            "https": https_model_data,
+            "orbitdb": orbitdb_model_data
         }
 
         if all(value is None for value in model_data.values()):
@@ -884,11 +897,14 @@ class ipfs_model_manager():
             with tempfile.NamedTemporaryFile(suffix=".md", dir="/tmp") as this_temp_file:
                 if "/README.md" in list(this_model_manifest_cache["ipfs"].keys()):
                     ipfs_test_file = self.download_ipfs(this_model_manifest_cache["ipfs"]["/README.md"]["path"], this_temp_file.name)
-                    with open(ipfs_test_file, 'r') as f:
-                        ipfs_test = f.read()
-                    if len(ipfs_test) > 0:
-                        ipfs_test = True
-                    else:
+                    if type(ipfs_test_file) == str and not type(ipfs_test_file) == Exception and ipfs_test_file.args[0] != 'Command timed out':
+                        with open(ipfs_test_file, 'r') as f:
+                            ipfs_test = f.read()
+                        if len(ipfs_test) > 0:
+                            ipfs_test = True
+                        else:
+                            ipfs_test = False
+                    else: 
                         ipfs_test = False
         except Exception as e:
             ipfs_test = e
