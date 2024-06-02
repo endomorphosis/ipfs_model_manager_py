@@ -308,9 +308,6 @@ class ipfs_model_manager():
             }
             pass
 
-
-
-
         return {
             "ipfs_stop": ipfs_stop,
             "ipfs_start": ipfs_start,
@@ -346,6 +343,7 @@ class ipfs_model_manager():
         with tempfile.NamedTemporaryFile(suffix=suffix, dir="/tmp", delete=False) as this_temp_file:
             file_metadata = os.stat(this_temp_file.name)
             tmp_filename = this_temp_file.name.split("/")[-1]
+            tmp_path = os.path.join("/tmp", tmp_filename)
             this_dir = os.path.dirname(os.path.realpath(__file__))
             aria2_dir = os.path.join(this_dir, "aria2")
             aria2_append_path = "PATH=$PATH:"+aria2_dir + " "
@@ -357,19 +355,17 @@ class ipfs_model_manager():
                 os.system(command2)
                 pass
             if("collection.json" not in dst_path and "README.md" not in dst_path):
-                command3 = "mv /tmp/"+tmp_filename+" "+dst_path
+                command3 = "mv "+tmp_path+" "+dst_path
                 os.system(command3)
-
-                if(os.path.exists(this_temp_file.name)):
-                    command4 = "rm /tmp/"+tmp_filename
+                if(os.path.exists(tmp_path)):
+                    command4 = "rm "+tmp_path
                     os.system(command4)
 
             else:
-                command3 = "cp /tmp/"+tmp_filename+" "+dst_path
+                command3 = "cp "+tmp_path+" "+dst_path
                 os.system(command3)                
-
                 if(os.path.exists(this_temp_file.name)):
-                    command4 = "rm /tmp/"+tmp_filename
+                    command4 = "rm "+tmp_path
                     os.system(command4)
 
                 # NOTE there is an issue where the file is not being copied to the correct location
@@ -466,13 +462,17 @@ class ipfs_model_manager():
                     return filename_dst
                     
             except Exception as e:
-                print("Exception thrown remove files")
+
                 if(this_temp_file != None):
                     if(os.path.exists(this_temp_file.name)):
-                        command = "rm "+this_temp_file.name
+                        command = "rm "+ this_temp_file.name
                         os.system(command)
-                return e
-            
+
+                if e.args[0] != "Command timed out":
+                    raise e
+                else:
+                    print("download_ipfs timed out" + ipfs_src)
+                    return False
         else:
             #raise Exception("Invalid filename_dst, no `.` suffix found") 
             pass
