@@ -319,7 +319,11 @@ class ipfs_model_manager():
         }
        
     def download_https(self, https_src, model_path, **kwargs):
-        suffix = "." + https_src.split("/")[-1].split(".")[-1]
+        suffix_split = https_src.split("/")[-1].split(".")[-1]
+        if len(suffix_split) > 1:
+            suffix = "." + suffix_split
+        else:
+            suffix = ""
         if (os.path.exists(model_path)):
             if os.path.isdir(model_path):
                 dst_path = os.path.join(model_path, https_src.split("/")[-1])
@@ -340,6 +344,7 @@ class ipfs_model_manager():
                 os.makedirs(dirname)
                 dst_path = os.path.join(dirname,filename)
         
+        
         with tempfile.NamedTemporaryFile(suffix=suffix, dir="/tmp", delete=False) as this_temp_file:
             file_metadata = os.stat(this_temp_file.name)
             tmp_filename = this_temp_file.name.split("/")[-1]
@@ -350,23 +355,24 @@ class ipfs_model_manager():
             command =  aria2_append_path + "aria2c -x 16 "+https_src+" -d /tmp -o "+ tmp_filename +" --allow-overwrite=true "
             #os.system(command)
             subprocess.Popen(command, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            if os.path.exists(dst_path):
+            if(os.path.exists(dst_path) and dst_path != "/tmp/"):
                 command2 = "rm " + dst_path
                 os.system(command2)
                 pass
-            if("collection.json" not in dst_path and "README.md" not in dst_path and tmp_path != dst_path):
-                command3 = "mv "+tmp_path+" "+dst_path
+            if("collection.json" not in dst_path and "README.md" not in dst_path and tmp_path != dst_path and dst_path != "/tmp/"):
+                command3 = "mv " + tmp_path + " "+ dst_path
                 os.system(command3)
-                if(os.path.exists(tmp_path)):
-                    command4 = "rm "+tmp_path
+                if(os.path.exists(tmp_path) and dst_path != "/tmp/"):
+                    command4 = "rm " + tmp_path
                     os.system(command4)
 
             else:
-                command3 = "cp "+tmp_path+" "+dst_path
-                os.system(command3)                
-                if(os.path.exists(tmp_path)):
-                    command4 = "rm "+ tmp_path
-                    os.system(command4)
+                if tmp_path != dst_path and dst_path != "/tmp/":
+                    command3 = "cp "+tmp_path +" "+dst_path
+                    os.system(command3)                
+                    if(os.path.exists(tmp_path) and tmp_path != "/tmp/"):
+                        command4 = "rm " + tmp_path
+                        os.system(command4)
 
                 # NOTE there is an issue where the file is not being copied to the correct location
                 # the previous bug was that the file location was being moved twice in the autodownload and in the download function
@@ -388,7 +394,11 @@ class ipfs_model_manager():
                 #     os.mkdir(dirname)
 
                 # NOTE: Changed to use filename_dst instead of basename so it's the same as the ipfs download function -fregg
-                suffix = "." + filename_dst.split(".")[-1]
+                suffix_split = s3_src.split("/")[-1].split(".")[-1]
+                if len(suffix_split) > 1:
+                    suffix = "." + suffix_split
+                else:
+                    suffix = ""                
                 with tempfile.NamedTemporaryFile(suffix=suffix, dir="/tmp", delete=False) as this_temp_file:
                     this_file_key = s3_src.split(self.s3cfg["bucket"]+"/")[1]
                     results = self.s3_kit.s3_dl_file(s3_src, this_temp_file.name, self.s3cfg["bucket"])
@@ -396,8 +406,8 @@ class ipfs_model_manager():
                         shutil.move(results["local_path"], filename_dst)
 
                         # NOTE: Add removal logic here -fregg
-                        if(os.path.exists(this_temp_file.name)):
-                            command = "rm "+this_temp_file.name
+                        if(os.path.exists(this_temp_file.name) and this_temp_file.name != "/tmp/"):
+                            command = "rm " + this_temp_file.name
                             os.system(command)
 
                         return filename_dst
@@ -405,7 +415,7 @@ class ipfs_model_manager():
                         return False
             except Exception as e:
                 # NOTE: Add removal logic here -fregg
-                if(os.path.exists(this_temp_file.name)):
+                if(os.path.exists(this_temp_file.name) and this_temp_file.name != "/tmp/"):
                     command = "rm "+this_temp_file.name
                     os.system(command)
                 return e
@@ -425,7 +435,12 @@ class ipfs_model_manager():
                 
                 # Checks if the suffix is a valid file extension and not the cache folder Probably needs some work to handle other ipfs_path locations
                 if(".cache" not in filename_dst and "." in filename_dst ):
-                    suffix = "." + filename_dst.split(".")[-1]
+                    suffix_split = ipfs_src.split("/")[-1].split(".")[-1]
+                    if len(suffix_split) > 1:
+                        suffix = "." + suffix_split
+                    else:
+                        suffix = ""        
+
                     with tempfile.NamedTemporaryFile(suffix=suffix, dir="/tmp", delete=False) as this_temp_file:
                         results = self.ipfs_kit.ipfs_get(cid = ipfs_src, path = this_temp_file.name)
                         if "path" in list(results.keys()):
@@ -434,7 +449,7 @@ class ipfs_model_manager():
                                 shutil.move(results_file_name, filename_dst)
                             
                                 # NOTE: Add removal logic here -fregg
-                                if(os.path.exists(this_temp_file.name)):
+                                if(os.path.exists(this_temp_file.name) and this_temp_file.name != "/tmp/"):
                                     command = "rm "+this_temp_file.name
                                     os.system(command)
 
@@ -466,14 +481,14 @@ class ipfs_model_manager():
             except Exception as e:
 
                 if(this_temp_file != None):
-                    if(os.path.exists(this_temp_file.name)):
+                    if(os.path.exists(this_temp_file.name) and this_temp_file.name != "/tmp/"):
                         command = "rm "+ this_temp_file.name
                         os.system(command)
 
                 if e.args[0] != "Command timed out":
                     raise e
                 else:
-                    print("download_ipfs timed out" + ipfs_src)
+                    print("download_ipfs timed out " + ipfs_src)
                     return False
         else:
             #raise Exception("Invalid filename_dst, no `.` suffix found") 
@@ -1125,7 +1140,7 @@ class ipfs_model_manager():
                         if os.path.isdir(src_path) and not os.path.exists(os.path.dirname(dst_path)):
                             shutil.copytree(src_path, os.path.dirname(dst_path))
                             shutil.rmtree(src_path)
-                        elif not os.path.exists(dst_path):
+                        elif not os.path.exists(dst_path) and src_path != dst_path:
                             shutil.move(src_path, dst_path)
                         else:
                             ## NOTE add check for file size and md5 conditional checking.
