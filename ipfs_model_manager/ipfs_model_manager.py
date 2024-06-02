@@ -283,14 +283,14 @@ class ipfs_model_manager():
                 with open(os.path.join(self.ipfs_path,"collection.json"), 'r') as f:
                     self.local_collection = json.load(f)
 
-        try:
-            ipfs_stop = self.ipfs_kit.ipfs_kit_stop()
-        except Exception as e:
-            ipfs_stop = e
-        try:
-            ipfs_start = self.ipfs_kit.ipfs_kit_start()
-        except Exception as e:
-            ipfs_start = e
+        # try:
+        #     ipfs_stop = self.ipfs_kit.ipfs_kit_stop()
+        # except Exception as e:
+        #     ipfs_stop = e
+        # try:
+        #     ipfs_start = self.ipfs_kit.ipfs_kit_start()
+        # except Exception as e:
+        #     ipfs_start = e
 
         try:
             with tempfile.NamedTemporaryFile(suffix=".json", dir="/tmp") as this_temp_file:
@@ -309,8 +309,8 @@ class ipfs_model_manager():
             pass
 
         return {
-            "ipfs_stop": ipfs_stop,
-            "ipfs_start": ipfs_start,
+            # "ipfs_stop": ipfs_stop,
+            # "ipfs_start": ipfs_start,
             "ipfs_collection": self.ipfs_collection,
             "s3_collection": self.s3_collection,
             "local_collection": self.local_collection,
@@ -354,7 +354,7 @@ class ipfs_model_manager():
                 command2 = "rm " + dst_path
                 os.system(command2)
                 pass
-            if("collection.json" not in dst_path and "README.md" not in dst_path):
+            if("collection.json" not in dst_path and "README.md" not in dst_path and tmp_path != dst_path):
                 command3 = "mv "+tmp_path+" "+dst_path
                 os.system(command3)
                 if(os.path.exists(tmp_path)):
@@ -364,8 +364,8 @@ class ipfs_model_manager():
             else:
                 command3 = "cp "+tmp_path+" "+dst_path
                 os.system(command3)                
-                if(os.path.exists(this_temp_file.name)):
-                    command4 = "rm "+tmp_path
+                if(os.path.exists(tmp_path)):
+                    command4 = "rm "+ tmp_path
                     os.system(command4)
 
                 # NOTE there is an issue where the file is not being copied to the correct location
@@ -392,7 +392,7 @@ class ipfs_model_manager():
                 with tempfile.NamedTemporaryFile(suffix=suffix, dir="/tmp", delete=False) as this_temp_file:
                     this_file_key = s3_src.split(self.s3cfg["bucket"]+"/")[1]
                     results = self.s3_kit.s3_dl_file(s3_src, this_temp_file.name, self.s3cfg["bucket"])
-                    if results is not None and len(results) > 0:
+                    if (results is not None and len(results) > 0 and results["local_path"] is not None and results["local_path"] != filename_dst):
                         shutil.move(results["local_path"], filename_dst)
 
                         # NOTE: Add removal logic here -fregg
@@ -430,12 +430,13 @@ class ipfs_model_manager():
                         results = self.ipfs_kit.ipfs_get(cid = ipfs_src, path = this_temp_file.name)
                         if "path" in list(results.keys()):
                             results_file_name = results["path"]
-                            shutil.move(results_file_name, filename_dst)
+                            if (results_file_name != filename_dst):
+                                shutil.move(results_file_name, filename_dst)
                             
-                            # NOTE: Add removal logic here -fregg
-                            if(os.path.exists(this_temp_file.name)):
-                                command = "rm "+this_temp_file.name
-                                os.system(command)
+                                # NOTE: Add removal logic here -fregg
+                                if(os.path.exists(this_temp_file.name)):
+                                    command = "rm "+this_temp_file.name
+                                    os.system(command)
 
                             return filename_dst
                         else:
@@ -457,7 +458,8 @@ class ipfs_model_manager():
 
                         for file in os.scandir(tempdir):
                             if file.is_file():
-                                shutil.move(file.path, filename_dst + file.name)
+                                if (file.path != filename_dst + file.name):
+                                    shutil.move(file.path, filename_dst + file.name)
 
                     return filename_dst
                     
@@ -744,7 +746,7 @@ class ipfs_model_manager():
                 self.local_collection = collection
         try:
             https_download = self.download_https(cache["https"], '/tmp/collection.json')
-            if os.path.exists("./collection.json/collection.json"):
+            if os.path.exists("./collection.json/collection.json") and not os.path.exists("/tmp/collection.json"):
                 shutil.move("./collection.json/collection.json", "/tmp/collection.json")
                 shutil.rmtree("./collection.json")
             if os.path.exists(https_download):
@@ -765,28 +767,30 @@ class ipfs_model_manager():
         timestamp_1 = time.time()
         try:
             ipfs_download = self.download_ipfs(cache["ipfs"], '/tmp/collection.json')
-            with open(ipfs_download, 'r') as f:
-                download_data = f.read()
-                if len(download_data) > 0:
-                    this_collection = json.loads(download_data)
-                    self.ipfs_collection = this_collection
+            if ipfs_download is not None and ipfs_download != False:
+                with open(ipfs_download, 'r') as f:
+                    download_data = f.read()
+                    if len(download_data) > 0:
+                        this_collection = json.loads(download_data)
+                        self.ipfs_collection = this_collection
         except Exception as e:
             ipfs_download = None
             print(e)
             pass
         timestamp_2 = time.time()
-        try:
-            s3_download = self.download_s3(cache["s3"], '/tmp/collection.json')
-            if s3_download is not None and self.s3cfg is not None and type(self.s3cfg) == dict and self.s3cfg["bucket"] is not None and self.s3cfg["bucket"] != "":
-                with open(s3_download, 'r') as f:
-                    download_data = f.read()
-                    if len(download_data) > 0:
-                        this_collection = json.loads(download_data)
-                        self.s3_collection = this_collection
-        except Exception as e:
-            s3_download = None
-            print(e)
-            pass
+        if self.s3cfg is not None and type(self.s3cfg) == dict and self.s3cfg["bucket"] is not None and self.s3cfg["bucket"] != "":
+            try:
+                s3_download = self.download_s3(cache["s3"], '/tmp/collection.json')
+                if s3_download is not None:
+                    with open(s3_download, 'r') as f:
+                        download_data = f.read()
+                        if len(download_data) > 0:
+                            this_collection = json.loads(download_data)
+                            self.s3_collection = this_collection
+            except Exception as e:
+                s3_download = None
+                print(e)
+                pass
         timestamp_3 = time.time()
 
         timestamps = {
@@ -936,9 +940,7 @@ class ipfs_model_manager():
                 if "/README.md" in list(this_model_manifest_cache["https"].keys()):
                     https_url = this_model_manifest_cache["https"]["/README.md"]["url"]
                     https_test_file = self.download_https(https_url, this_temp_file.name)
-                    with open(https_test_file, 'r') as f:
-                        https_test = f.read()
-                    if len(https_test) > 0:
+                    if type(https_test_file) == str and not type(https_test_file) == Exception and os.path.exists(https_test_file):
                         https_test = True
                     else:
                         https_test = False
@@ -1029,11 +1031,11 @@ class ipfs_model_manager():
                                     this_download_src = "s3"
                                     #raise Exception("MD5 mismatch")
                                     pass
-                                if(os.path.exists(ipfs_download_file) and https_download_file != this_tmp_file):
+                                if(os.path.exists(ipfs_download_file) and https_download_file != this_tmp_file and ipfs_download_file != this_tmp_file):
                                     command = "mv " + ipfs_download_file + " " + this_tmp_file
                                     os.system(command)
                                     pass
-                                elif(os.path.exists(this_temp_file.name) and not os.path.exists(this_tmp_file)):
+                                elif(os.path.exists(this_temp_file.name) and not os.path.exists(this_tmp_file) and this_temp_file.name != this_tmp_file):
                                     command = "mv " + this_temp_file.name + " " + this_tmp_file
                                     os.system(command)
                                     pass
@@ -1063,11 +1065,11 @@ class ipfs_model_manager():
                                     #raise Exception("MD5 mismatch")
                                     pass
 
-                                if(os.path.exists(s3_download_file) and s3_download_file != this_tmp_file):
+                                if(os.path.exists(s3_download_file) and s3_download_file != this_tmp_file and s3_download_file != this_tmp_file):
                                     command = "mv " + s3_download_file + " " + this_tmp_file
                                     os.system(command)
                                     pass
-                                elif(os.path.exists(this_temp_file.name) and not os.path.exists(this_tmp_file)):
+                                elif(os.path.exists(this_temp_file.name) and not os.path.exists(this_tmp_file) and this_temp_file.name != this_tmp_file):
                                     command = "mv " + this_temp_file.name + " " + this_tmp_file
                                     os.system(command)
                                     pass
@@ -1092,11 +1094,11 @@ class ipfs_model_manager():
                                 file_success[file] = "md5 mismatch"
                                 #raise Exception("MD5 mismatch")
                                 pass
-                            if(os.path.exists(https_download_file) and https_download_file != this_tmp_file):
+                            if(os.path.exists(https_download_file) and not os.path.exists(this_tmp_file) and https_download_file != this_tmp_file):
                                 command = "mv " + https_download_file + " " + this_tmp_file
                                 os.system(command)
                                 pass
-                            elif(os.path.exists(this_temp_file.name) and not os.path.exists(this_tmp_file)):
+                            elif(os.path.exists(this_temp_file.name) and not os.path.exists(this_tmp_file) and this_temp_file.name != this_tmp_file):
                                 command = "mv " + this_temp_file.name + " " + this_tmp_file
                                 os.system(command)
                                 pass
@@ -1119,12 +1121,15 @@ class ipfs_model_manager():
                     this_tmp_file = os.path.join("/tmp/", file)
                     if not os.path.exists(os.path.dirname(dst_path)):
                         os.makedirs(os.path.dirname(dst_path))
-                    if not os.path.exists(dst_path) and os.path.exists(src_path):
-                        if os.path.isdir(src_path):
+                    if os.path.exists(src_path):
+                        if os.path.isdir(src_path) and not os.path.exists(os.path.dirname(dst_path)):
                             shutil.copytree(src_path, os.path.dirname(dst_path))
                             shutil.rmtree(src_path)
-                        else:
+                        elif not os.path.exists(dst_path):
                             shutil.move(src_path, dst_path)
+                        else:
+                            ## NOTE add check for file size and md5 conditional checking.
+                            pass
                     pass
                 return this_model_manifest
             else:
@@ -1278,39 +1283,45 @@ class ipfs_model_manager():
         for model in ls_models:
             if model in this_collection and model != "cache" and model != "error":
                 this_folder_data = this_collection[model]["folderData"]
-                results = self.check_https(this_collection[model])
-                if results != None and results is not False:
-                    https_models[model] = results
-                else:
-                    pass
+                if model not in list(https_models.keys()):
+                    results = self.check_https(this_collection[model])
+                    if results != None and results is not False:
+                        https_models[model] = results
+                    else:
+                        pass
             elif model in self.local_collection and model != "cache" and model != "error":
                 this_folder_data = self.local_collection[model]["folderData"]
-                results = self.check_https(self.local_collection[model])
-                if results != None and results is not False:
-                    https_models[model] = results
-                else:
-                    pass
+                if model not in list(https_models.keys()):
+                    results = self.check_https(self.local_collection[model])
+                    if results != None and results is not False:
+                        https_models[model] = results
+                    else:
+                        pass
             elif model in self.s3_collection and model != "cache" and model != "error":
                 this_folder_data = self.s3_collection[model]["folderData"]
-                results = self.check_https(self.s3_collection[model])
-                if results != None and results is not False:
-                    https_models[model] = results
-                else:
-                    pass
+                if model not in list(https_models.keys()):
+                    results = self.check_https(self.s3_collection[model])
+                    if results != None and results is not False:
+                        https_models[model] = results
+                    else:
+                        pass
             elif model in self.ipfs_collection and model != "cache" and model != "error":
                 this_folder_data = self.s3_collection[model]["folderData"]
-                results = self.check_https(self.ipfs_collection[model])
-                if results != None and results is not False:
-                    https_models[model] = results
-                else:
-                    pass
+                if model not in list(https_models.keys()):
+                    results = self.check_https(self.ipfs_collection[model])
+                    if results != None and results is not False:
+                        https_models[model] = results
+                    else:
+                        pass
             elif model in self.https_collection and model != "cache" and model != "error":
                 this_folder_data = self.https_collection[model]["folderData"]
-                results = self.check_https(self.https_collection[model])
-                if results != None and results is not False:
-                    https_models[model] = results
-                else:
-                    pass
+                if model not in list(https_models.keys()):
+                    results = self.check_https(self.https_collection[model])
+                    if results != None and results is not False:
+                        https_models[model] = results
+                    else:
+                        pass
+                
 
         self.https_models = https_models
         return https_models  
@@ -1475,6 +1486,11 @@ class ipfs_model_manager():
 
         self.local_models = local_models
         return local_models  
+
+    def ls_orbitdb_models(self, **kwargs):
+        ls_models = self.ls_models()
+        orbitdb_models = {}
+        return {}
         
     def state(self, **kwargs):
         timestamp = datetime.datetime.now()
@@ -1652,6 +1668,7 @@ class ipfs_model_manager():
                     pass
             
         for model in ls_models:
+            this_model_timestamp = 0
             if model not in self.history_models.keys():
                 self.history_models[model] = None
             
@@ -1759,22 +1776,32 @@ class ipfs_model_manager():
         }
 
         for model in ls_models:
+            if self.history_models[model] == None:
+                self.history_models[model] = 0
             if "local_models" in self.models:            
                 if model in self.models["local_models"]:
                     this_model_timestamp = self.models["local_models"][model]
                     if current_timestamp - this_model_timestamp > self.timing["local_time"] and current_timestamp - self.history_models[model] > self.timing["local_time"]:
                         expired["local"].append(model)
-            if "s3Models" in self.models:
-                if model in self.models["s3Models"]:
-                    this_model_timestamp = self.models["s3Models"][model]
-                    if current_timestamp - this_model_timestamp > self.timing["s3_time"] and current_timestamp - self.history_models[model] > self.timing["s3_time"]:
-                        expired["s3"].append(model)
-            if "s3_models" in self.models:
-                if model in self.models["s3_models"]:
-                    this_model_timestamp = self.models["s3_models"][model]
-                    if current_timestamp - this_model_timestamp > self.timing["s3_time"] and current_timestamp - self.history_models[model] > self.timing["s3_time"]:
-                        expired["s3"].append(model)
 
+            if self.s3cfg != None and "bucket" in self.s3cfg and self.s3cfg["bucket"] != None and self.s3cfg["bucket"] != "":
+                if "s3Models" in self.models:
+                    if model in self.models["s3Models"]:
+                        this_model_timestamp = self.models["s3Models"][model]
+                        if current_timestamp - this_model_timestamp > self.timing["s3_time"] and current_timestamp - self.history_models[model] > self.timing["s3_time"]:
+                            expired["s3"].append(model)
+                if "s3_models" in self.models:
+                    if model in self.models["s3_models"]:
+                        this_model_timestamp = self.models["s3_models"][model]
+                        if current_timestamp - this_model_timestamp > self.timing["s3_time"] and current_timestamp - self.history_models[model] > self.timing["s3_time"]:
+                            expired["s3"].append(model)
+
+            if "ipfs_models" in self.models:
+                if model in self.models["ipfs_models"]:
+                    this_model_timestamp = self.models["ipfs_models"][model]
+                    if current_timestamp - this_model_timestamp > self.timing["ipfs_time"] and current_timestamp - self.history_models[model] > self.timing["ipfs_time"]:
+                        expired["ipfs"].append(model)
+        
         self.expired = expired
         return self.expired
     
@@ -1867,9 +1894,9 @@ class ipfs_model_manager():
     
     def start(self, **kwargs):
         self.load_collection_cache()
-        self.state()
+        #self.state()
         #self.state(src = "s3")
-        #self.state(src = "local")
+        self.state(src = "local")
         #self.state(src = "ipfs")
         #self.state(src = "orbitdb")
         #self.state(src = "https")
@@ -1896,26 +1923,26 @@ class ipfs_model_manager():
             time.sleep(self.loop_sleep)
         return self
 
-    def test(self, **kwargs):
-        self.load_collection_cache()
-        self.state()
-        #self.state(src = "s3")
-        self.state(src = "local")
-        #self.state(src = "ipfs")
-        #self.state(src = "orbitdb")
-        #self.state(src = "https")
-        self.check_pinned_models()
-        self.check_history_models()
-        self.rand_history()
-        self.check_zombies()
-        self.check_expired()
-        self.check_not_found()
-        #self.download_model('gte-small')
-        #self.download_model('stablelm-zephyr-3b-GGUF-Q2_K')
-        self.download_missing()
-        self.evict_expired_models()
-        self.evict_zombies()
-        return self
+    # def test(self, **kwargs):
+    #     self.load_collection_cache()
+    #     self.state()
+    #     #self.state(src = "s3")
+    #     self.state(src = "local")
+    #     #self.state(src = "ipfs")
+    #     #self.state(src = "orbitdb")
+    #     #self.state(src = "https")
+    #     self.check_pinned_models()
+    #     self.check_history_models()
+    #     self.rand_history()
+    #     self.check_zombies()
+    #     self.check_expired()
+    #     self.check_not_found()
+    #     #self.download_model('gte-small')
+    #     #self.download_model('stablelm-zephyr-3b-GGUF-Q2_K')
+    #     self.download_missing()
+    #     self.evict_expired_models()
+    #     self.evict_zombies()
+    #     return self
 
 if __name__ == '__main__':
     model_manager = ipfs_model_manager()
