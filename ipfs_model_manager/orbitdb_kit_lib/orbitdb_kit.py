@@ -6,7 +6,7 @@ import websockets as ws
 import asyncio
 from config import config
 import json
-from .websocket_kit import WebSocketClient
+from .websocket_kit import WebSocketClient as WebSocketClient
 import datetime
 import time
 
@@ -36,8 +36,28 @@ class orbitdb_kit():
             self.orbitdb_args['index'] = None
             self.orbitdb_args['chunkSize'] = None
             self.orbitdb_args['swarmName'] = None
-
+            self.on_open = self.on_open
+            self.on_message = self.on_message
+            self.on_error = self.on_error
+            self.on_close = self.on_close
         else:
+            if 'on_open' not in meta:
+                self.on_open = self.on_open
+            else:
+                self.on_open = meta['on_open']
+            if 'on_message' not in meta:
+                self.on_message = self.on_message
+            else:
+                self.on_message = meta['on_message']
+            if 'on_error' not in meta:
+                self.on_error = self.on_error
+            else:
+                self.on_error = meta['on_error']
+            if 'on_close' not in meta:
+                self.on_close = self.on_close
+            else:
+                self.on_close = meta['on_close']
+                
             if 'ipaddress' in self.meta:
                 self.orbitdb_args['ipaddress'] = self.meta['ipaddress']
             else:

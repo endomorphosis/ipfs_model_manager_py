@@ -5,6 +5,7 @@ import json
 import pathlib
 import time
 import tempfile
+import asyncio
 from config import config
 from s3_kit import s3_kit as s3_kit
 from ipfs_kit_lib.ipfs_kit import ipfs_kit as ipfs_kit
@@ -157,7 +158,14 @@ class ipfs_model_manager():
 
         homedir = os.path.expanduser("~")
         homedir_files = os.listdir(homedir)
-        self.orbitdb_kit = orbitdb_kit(resources, meta = meta)
+        meta["on_open"] = self.on_open
+        meta["on_message"] = self.on_message
+        meta["on_error"] = self.on_error
+        meta["on_close"] = self.on_close
+        self.orbitdb_kit = orbitdb_kit(
+            resources,
+            meta = meta
+            )
         self.test_fio = test_fio(None)
         if self.s3cfg is not None and type(self.s3cfg) == dict and self.s3cfg["bucket"] is not None and self.s3cfg["bucket"] != "":
             self.s3_kit = s3_kit(resources, meta = meta)
@@ -229,6 +237,22 @@ class ipfs_model_manager():
             "ipfs": {},
             "ipfs_cluster": {},
         }
+
+    def on_open(self, ws):
+        print("on_open")
+        pass
+
+    def on_message(self, ws, message):
+        print("on_message")
+        pass
+
+    def on_error(self, ws, error):
+        print("on_error")
+        pass
+
+    def on_close(self, ws):
+        print("on_close")
+        pass
 
     def __call__(self, method, **kwargs):
         if method == "load_collection":
@@ -1907,7 +1931,8 @@ class ipfs_model_manager():
             self.s3_kit.s3_rm_file(file, self.s3cfg["bucket"])
         return None
     
-    def start(self, **kwargs):
+    async def start(self, **kwargs):
+        await self.orbitdb_kit.connect_orbitdb()
         self.load_collection_cache()
         #self.state()
         #self.state(src = "s3")
@@ -1961,5 +1986,6 @@ class ipfs_model_manager():
 
 if __name__ == '__main__':
     model_manager = ipfs_model_manager()
-    model_manager.start()
+    # model_manager.start()
     
+    asyncio.run(model_manager.start())
