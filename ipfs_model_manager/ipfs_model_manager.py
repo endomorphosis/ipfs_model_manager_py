@@ -610,8 +610,6 @@ class ipfs_model_manager():
         this_model = None
 
         if model_data[newest] is not None:
-
-            # NOTE: Add check for disk space before downloading  
             if(model_data[newest]["hwRequirements"]["diskUsage"] > shutil.disk_usage("/tmp").free):
                 raise Exception("Not enough disk space to download model")
             else:
