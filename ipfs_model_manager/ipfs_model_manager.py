@@ -165,7 +165,7 @@ class ipfs_model_manager():
         self.orbitdb_kit = orbitdb_kit(
             resources,
             meta = meta
-            )
+        )
         self.test_fio = test_fio(None)
         if self.s3cfg is not None and type(self.s3cfg) == dict and self.s3cfg["bucket"] is not None and self.s3cfg["bucket"] != "":
             self.s3_kit = s3_kit(resources, meta = meta)
@@ -244,15 +244,17 @@ class ipfs_model_manager():
 
     def on_message(self, ws, message):
         print("on_message")
+        print(message)
         pass
 
     def on_error(self, ws, error):
         print("on_error")
+        print(error)
         pass
 
-    def on_close(self, ws):
-        print("on_close")
-        pass
+    def on_close(self, ws, arg1, arg2):
+        print("Connection closed")
+        return ws
 
     def __call__(self, method, **kwargs):
         if method == "load_collection":

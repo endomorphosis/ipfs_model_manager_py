@@ -57,36 +57,36 @@ class orbitdb_kit():
                 self.on_close = self.on_close
             else:
                 self.on_close = meta['on_close']
-                
-            if 'ipaddress' in self.meta:
-                self.orbitdb_args['ipaddress'] = self.meta['ipaddress']
+
+            if "orbitdb" in meta:
+                if 'ipAddress' in meta["orbitdb"] and meta["orbitdb"]["ipAddress"] is not None and meta["orbitdb"]["ipAddress"] != '':
+                    self.orbitdb_args['ipaddress'] = meta["orbitdb"]["ipAddress"]
+                if 'orbitdbAddress' in meta["orbitdb"] and meta["orbitdb"]["orbitdbAddress"] is not None and meta["orbitdb"]["orbitdbAddress"] != '':
+                    self.orbitdb_args['orbitdbAddress'] = meta["orbitdb"]["orbitdbAddress"]
+                if 'index' in meta["orbitdb"] and meta["orbitdb"]["index"] is not None and meta["orbitdb"]["index"] != '':
+                    self.orbitdb_args['index'] = meta["orbitdb"]["index"]
+                if 'chunkSize' in meta["orbitdb"] and meta["orbitdb"]["chunkSize"] is not None and meta["orbitdb"]["chunkSize"] != '':
+                    self.orbitdb_args['chunkSize'] = meta["orbitdb"]["chunkSize"]
+                if 'swarmName' in meta["orbitdb"] and meta["orbitdb"]["swarmName"] is not None and meta["orbitdb"]["swarmName"] != '':
+                    self.orbitdb_args['swarmName'] = meta["orbitdb"]["swarmName"]
+                if 'port' in meta["orbitdb"] and meta["orbitdb"]["port"] is not None and meta["orbitdb"]["port"] != '':
+                    self.orbitdb_args['port'] = meta["orbitdb"]["port"]
             else:
-                self.orbitdb_args['ipaddress'] = None
-            
-            if 'orbitdbAddress' in self.meta:
-                self.orbitdb_args['orbitdbAddress'] = self.meta['orbitdbAddress']
-            else:
-                self.orbitdb_args['orbitdbAddress'] = None
-            
-            if 'index' in self.meta:
-                self.orbitdb_args['index'] = self.meta['index']
-            else:
-                self.orbitdb_args['index'] = None
-            
-            if 'chunkSize' in self.meta:
+                pass
+            if 'ipaddress' in self.meta and self.meta['ipaddress'] is not None and self.meta['ipaddress'] != '':
+                self.orbitdb_args['ipaddress'] = self.meta['ipaddress']           
+            if 'orbitdbAddress' in self.meta and self.meta['orbitdbAddress'] is not None and self.meta['orbitdbAddress'] != '':
+                self.orbitdb_args['orbitdbAddress'] = self.meta['orbitdbAddress']            
+            if 'index' in self.meta and self.meta['index'] is not None and self.meta['index'] != '':
+                self.orbitdb_args['index'] = self.meta['index']            
+            if 'chunkSize' in self.meta and self.meta['chunkSize'] is not None and self.meta['chunkSize'] != '':
                 self.orbitdb_args['chunkSize'] = self.meta['chunkSize']
             else:
                 self.orbitdb_args['chunkSize'] = None
-
-            if 'swarmName' in self.meta:
+            if 'swarmName' in self.meta and self.meta['swarmName'] is not None and self.meta['swarmName'] != '':
                 self.orbitdb_args['swarmName'] = self.meta['swarmName']
-            else:
-                self.orbitdb_args['swarmName'] = None
-
-            if 'port' in self.meta:
+            if 'port' in self.meta and self.meta['port'] is not None and self.meta['port'] != '':
                 self.orbitdb_args['port'] = self.meta['port']
-            else:
-                self.orbitdb_args['port'] = 50001
         
         if self.orbitdb_args['ipaddress'] is None:
             self.orbitdb_args['ipaddress'] = '127.0.0.1'
