@@ -28,14 +28,15 @@ class orbitdb_kit():
         self.orbitdb = []
         self.ws = None
         self.url = None
+        self.orbitdb_args['ipaddress'] = None
+        self.orbitdb_args['orbitdbAddress'] = None
+        self.orbitdb_args['index'] = None
+        self.orbitdb_args['chunkSize'] = None
+        self.orbitdb_args['swarmName'] = None
+        self.orbitdb_args['port'] = None
         self.this_dir = os.path.dirname(os.path.realpath(__file__))
         if self.meta is None:
             self.meta = {}
-            self.orbitdb_args['ipaddress'] = None
-            self.orbitdb_args['orbitdbAddress'] = None
-            self.orbitdb_args['index'] = None
-            self.orbitdb_args['chunkSize'] = None
-            self.orbitdb_args['swarmName'] = None
             self.on_open = self.on_open
             self.on_message = self.on_message
             self.on_error = self.on_error
@@ -57,7 +58,6 @@ class orbitdb_kit():
                 self.on_close = self.on_close
             else:
                 self.on_close = meta['on_close']
-
             if "orbitdb" in meta:
                 if 'ipAddress' in meta["orbitdb"] and meta["orbitdb"]["ipAddress"] is not None and meta["orbitdb"]["ipAddress"] != '':
                     self.orbitdb_args['ipaddress'] = meta["orbitdb"]["ipAddress"]

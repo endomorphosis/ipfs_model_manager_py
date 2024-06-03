@@ -238,14 +238,76 @@ class ipfs_model_manager():
             "ipfs_cluster": {},
         }
 
-    def on_open(self, ws):
-        print("on_open")
-        pass
+    def on_open(self, ws, callback_fn = None):
+        print('connection accepted')
+        print("websocket url", self.orbitdb_kit.url)
+        peers = self.orbitdb_kit.peers_ls_request(ws)
+        select_all = self.orbitdb_kit.select_all_request(ws)
+        # insert = self.insert_request(ws, {"test": "test document"})
+        # update = self.update_request(ws, {"test": "update document"})
+        # select = self.select_request(ws, "test")
+        # delete = self.delete_request(ws, "test")
+        if callback_fn is not None:
+            results = callback_fn(ws)
+        else:
+            results = ws
+
+        self.loop()
+        return results
 
     def on_message(self, ws, message):
-        print("on_message")
-        print(message)
-        pass
+        # print(f"Received message: message = '{message}')")
+        recv = json.loads(message)
+        results = ""
+
+        if "error" in recv:
+            results = self.orbitdb_kit.on_error(
+                ws, recv['error']
+            )
+
+        if 'pong' in recv:
+            results = self.orbitdb_kit.on_pong_message(
+                ws, recv
+            )
+            
+        if 'ping' in recv:
+            results = self.orbitdb_kit.on_ping_message(
+                ws, recv
+            )
+
+        if 'peers' in recv:
+            results = self.orbitdb_kit.on_peers_message(
+                ws, recv
+            )
+        
+        if 'insert' in recv:
+            results = self.orbitdb_kit.on_insert_handler(
+                ws, recv
+            )
+        
+        if 'select_all' in recv:
+            results = self.orbitdb_kit.on_select_all_handler(
+                ws, recv
+            )
+        
+        if 'update' in recv:
+            results = self.orbitdb_kit.on_update_handler(
+                ws, recv
+            )
+        
+        if 'delete' in recv:
+            results = self.orbitdb_kit.on_delete_handler(
+                ws, recv
+            )
+
+        if 'select' in recv:
+            results = self.orbitdb_kit.on_select_handler(
+                ws, recv
+            )
+        
+        # print("results",  results)
+        return results
+    
 
     def on_error(self, ws, error):
         print("on_error")
@@ -1937,7 +1999,6 @@ class ipfs_model_manager():
         return None
     
     async def start(self, **kwargs):
-        await self.orbitdb_kit.connect_orbitdb()
         self.load_collection_cache()
         #self.state()
         #self.state(src = "s3")
@@ -1951,10 +2012,10 @@ class ipfs_model_manager():
         self.check_zombies()
         self.check_expired()
         self.check_not_found()
+        await self.orbitdb_kit.connect_orbitdb()
         return self.loop()
-    
-    def loop(self, **kwargs):
 
+    def loop(self, **kwargs):
         while True:
             self.loop_sleep = 5
             self.check_pinned_models()
