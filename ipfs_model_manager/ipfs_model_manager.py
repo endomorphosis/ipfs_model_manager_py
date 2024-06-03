@@ -107,7 +107,7 @@ class ipfs_model_manager():
                 "cache": self.cache,
             }
         else:
-            self.local_path = os.path.join(local_path , "cloudkit-models/")
+            self.local_path = os.path.join(local_path , "huggingface")
             if self.ipfs_path is None:
                 if os.geteuid() == 0:
                     self.ipfs_path = "/ipfs/"
@@ -378,25 +378,23 @@ class ipfs_model_manager():
             aria2_append_path = "PATH=$PATH:"+aria2_dir + " "
             command =  aria2_append_path + "aria2c -x 16 "+https_src+" -d /tmp -o "+ tmp_filename +" --allow-overwrite=true "
             #os.system(command)
-            subprocess.Popen(command, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            subprocess.run(command, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             if(os.path.exists(dst_path) and dst_path != "/tmp/"):
-                command2 = "rm " + dst_path
+                command2 = "rm -r " + dst_path
                 os.system(command2)
                 pass
             if("collection.json" not in dst_path and "README.md" not in dst_path and tmp_path != dst_path and dst_path != "/tmp/"):
                 command3 = "mv " + tmp_path + " "+ dst_path
                 os.system(command3)
                 if(os.path.exists(tmp_path) and dst_path != "/tmp/"):
-                    command4 = "rm " + tmp_path
+                    command4 = "rm -r " + tmp_path
                     os.system(command4)
-
-            else:
-                if tmp_path != dst_path and dst_path != "/tmp/":
-                    command3 = "cp "+tmp_path +" "+dst_path
-                    os.system(command3)                
-                    if(os.path.exists(tmp_path) and tmp_path != "/tmp/"):
-                        command4 = "rm " + tmp_path
-                        os.system(command4)
+            elif tmp_path != dst_path and dst_path != "/tmp/":
+                command3 = "cp "+tmp_path +" "+dst_path
+                os.system(command3)                
+                if(os.path.exists(tmp_path) and tmp_path != "/tmp/"):
+                    command4 = "rm -r " + tmp_path
+                    os.system(command4)
 
                 # NOTE there is an issue where the file is not being copied to the correct location
                 # the previous bug was that the file location was being moved twice in the autodownload and in the download function
@@ -610,7 +608,9 @@ class ipfs_model_manager():
         this_model = None
 
         if model_data[newest] is not None:
-            if(model_data[newest]["hwRequirements"]["diskUsage"] > shutil.disk_usage("/tmp").free):
+            tmp_folder_disk_usage = shutil.disk_usage("/tmp").free
+            tmp_required_disk_usage = model_data[newest]["hwRequirements"]["diskUsage"]
+            if(tmp_required_disk_usage > tmp_folder_disk_usage):
                 raise Exception("Not enough disk space to download model")
             else:
                 this_model = self.auto_download(model_data[newest], **kwargs)
@@ -1158,15 +1158,20 @@ class ipfs_model_manager():
                     this_tmp_file = os.path.join("/tmp/", file)
                     if not os.path.exists(os.path.dirname(dst_path)):
                         os.makedirs(os.path.dirname(dst_path))
-                    if os.path.exists(src_path):
+                    if not os.path.exists(dst_path) and src_path != dst_path and file != '' and file != 'manifest.json':
                         if os.path.isdir(src_path) and not os.path.exists(os.path.dirname(dst_path)):
                             shutil.copytree(src_path, os.path.dirname(dst_path))
                             shutil.rmtree(src_path)
+                        elif os.path.isdir(src_path) and os.path.exists(os.path.dirname(dst_path)):
+                            ## NOTE add check for file size and md5 conditional checking.
+                            shutil.rmtree(src_path)
                         elif not os.path.exists(dst_path) and src_path != dst_path:
                             shutil.move(src_path, dst_path)
-                        else:
+                        elif os.path.exists(dst_path) and src_path != dst_path:
                             ## NOTE add check for file size and md5 conditional checking.
+                            shutil.rmtree(src_path)
                             pass
+                        
                     pass
                 return this_model_manifest
             else:
