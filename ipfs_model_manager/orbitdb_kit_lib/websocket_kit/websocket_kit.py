@@ -1,6 +1,9 @@
 import websocket
 import json
 from urllib.parse import urlencode
+import _thread
+import time
+import rel
 
 class WebSocketClient:
 	def __init__(self, master_url, meta):
@@ -27,13 +30,21 @@ class WebSocketClient:
 				self.on_close = self.on_close
 			else:
 				self.on_close = meta['on_close']
+
+
 		self.ws = websocket.WebSocketApp(
 			master_url,
 			on_open=self.on_open,
 			on_message=self.on_message,
 			on_error=self.on_error,
 			on_close=self.on_close,
-		).run_forever(
+		)
+
+	def run_forever(self):
+		self.ws.run_forever(dispatcher=rel, reconnect=5)  # Set dispatcher to automatic reconnection, 5 second reconnect delay if connection closed unexpectedly
+		rel.signal(2, rel.abort)  # Keyboard Interrupt
+		rel.dispatch()
+		self.ws.run_forever(
 			ping_interval=5,
 			ping_timeout=2
 		)
@@ -41,7 +52,12 @@ class WebSocketClient:
 	        'status': 'disconnected'
         }
 
-	print('connecting to master')
+		print('connecting to master')
+		return True
+	
+	def close(self):
+		self.ws.close()
+		return True
 
 	def connect(self, master_url, meta):
 

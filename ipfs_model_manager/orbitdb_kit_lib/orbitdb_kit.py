@@ -118,8 +118,8 @@ class orbitdb_kit():
         # start_orbitdb = process.Popen(start_cmd, shell=True)
         # start_orbitdb = process.run(start_cmd, stdout=process.PIPE, stderr=process.PIPE)
         # pause for 5 seconds to allow orbitdb to start
-        asyncio.get_event_loop().run_until_complete(asyncio.sleep(5))
-        asyncio.get_event_loop().run_until_complete(self.connect_orbitdb())
+        # asyncio.get_event_loop().run_until_complete(asyncio.sleep(5))
+        # asyncio.get_event_loop().run_until_complete(self.connect_orbitdb())
         return start_orbitdb
         pass
 
@@ -146,14 +146,29 @@ class orbitdb_kit():
                 }
             )
             return self.ws
+        
+    async def run_forever(self):
+        self.ws.run_forever(
+            ping_interval=5,
+            ping_timeout=2
+        )
+        self.state = {
+            'status': 'disconnected'
+        }
+        print('connecting to master')
+        return True
     
+    async def disconnect_orbitdb(self):
+        if self.ws is not None:
+            self.ws.close()
+            return True
+        pass
+
     def on_pong_message(self, ws, message):
         self.pong = message['pong']
-        pass
 
     def on_ping_message(self, ws, recv):
         self.ping = recv['ping']
-        pass
 
     def on_peers_message(self, ws, recv):
         self.peers = recv['peers']
@@ -263,7 +278,7 @@ class orbitdb_kit():
         return self.orbitdb
 
     def on_message(self, ws, message):
-        print(f"Received message in orbitdb_kit: message = '{message}')")
+        print(f"Received message in: message = '{message}')")
         recv = json.loads(message)
         results = ""
 

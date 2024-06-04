@@ -253,10 +253,9 @@ class ipfs_model_manager():
         else:
             results = ws
         return True
-        return self.loop(ws)
 
     def on_message(self, ws, message):
-        print(f"Received message in ipfs_model_manager: message = '{message}')")
+        # print(f"Received message: message = '{message}')")
         recv = json.loads(message)
         results = ""
 
@@ -1999,7 +1998,7 @@ class ipfs_model_manager():
             self.s3_kit.s3_rm_file(file, self.s3cfg["bucket"])
         return None
     
-    def start(self, **kwargs):
+    async def start(self, **kwargs):
         self.load_collection_cache()
         #self.state()
         #self.state(src = "s3")
@@ -2013,23 +2012,21 @@ class ipfs_model_manager():
         self.check_zombies()
         self.check_expired()
         self.check_not_found()
-        # asyncio.run(self.orbitdb_kit.connect_orbitdb())
-        return True
-        return self.loop(self.orbitdb_kit.ws)
+        return await self.loop(self.orbitdb_kit.ws)
 
-    def sync_orbitdb(self, ws, **kwargs):
-        select_all = self.orbitdb_kit.select_all_request(ws)
-        if "status" in list(self.orbitdb_kit.state.keys()):
-            if self.orbitdb_kit.state["status"] == "open":
-                pass
-            else :
-                print("OrbitDB not connected")
-                return False
-                # raise Exception("OrbitDB not connected")
-        else:
-            print("OrbitDB not connected")
-            return False
-            # raise Exception("OrbitDB not connected")
+    async def sync_orbitdb(self,ws, **kwargs):
+        # select_all = self.orbitdb_kit.select_all_request(ws)
+        # if "status" in list(self.orbitdb_kit.state.keys()):
+        #     if self.orbitdb_kit.state["status"] == "open":
+        #         pass
+        #     else :
+        #         print("OrbitDB not connected")
+        #         return False
+        #         # raise Exception("OrbitDB not connected")
+        # else:
+        #     print("OrbitDB not connected")
+        #     return False
+        #     # raise Exception("OrbitDB not connected")
         
         for item in self.orbitdb_kit.orbitdb:
             this_hash = item.hash
@@ -2038,10 +2035,14 @@ class ipfs_model_manager():
             print (this_hash, this_key, this_content)
             
 
-    def loop(self, ws, **kwargs):
+    async def loop(self, ws,**kwargs):
+        self.loop_sleep = 5
         while True:
-            self.loop_sleep = 5
-            self.sync_orbitdb(ws)
+            await self.sync_orbitdb(ws)
+            await self.orbitdb_kit.connect_orbitdb()
+            time.sleep(self.loop_sleep)
+            await self.sync_orbitdb(ws)
+            await self.orbitdb_kit.disconnect_orbitdb()
             # self.check_pinned_models()
             # self.check_history_models()
             # self.check_zombies()
@@ -2050,7 +2051,6 @@ class ipfs_model_manager():
             # self.download_missing()
             # self.evict_expired_models()
             # self.evict_zombies()
-            time.sleep(self.loop_sleep)
         return self
 
     # def test(self, **kwargs):
@@ -2076,6 +2076,6 @@ class ipfs_model_manager():
 
 if __name__ == '__main__':
     model_manager = ipfs_model_manager()
-    model_manager.start()
-    asyncio.run(model_manager.orbitdb_kit.connect_orbitdb())
-    asyncio.run(model_manager.loop(model_manager.orbitdb_kit.ws))
+    # model_manager.start()
+    asyncio.run(model_manager.start())
+    ### NOTE: SPLIT THE FUNCTIONALITY BETWEEN RUN ONCE AND RUN FOREVER
