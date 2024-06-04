@@ -243,20 +243,20 @@ class ipfs_model_manager():
         print("websocket url", self.orbitdb_kit.url)
         peers = self.orbitdb_kit.peers_ls_request(ws)
         select_all = self.orbitdb_kit.select_all_request(ws)
-        # insert = self.insert_request(ws, {"test": "test document"})
+        self.orbitdb_kit.state["status"] = "open"
+        #insert = self.orbitdb_kit.insert_request(ws, {"test": "test document"})
         # update = self.update_request(ws, {"test": "update document"})
-        # select = self.select_request(ws, "test")
+        #select = self.orbitdb_kit.select_request(ws, "test")
         # delete = self.delete_request(ws, "test")
         if callback_fn is not None:
             results = callback_fn(ws)
         else:
             results = ws
-
-        self.loop()
-        return results
+        return True
+        return self.loop(ws)
 
     def on_message(self, ws, message):
-        # print(f"Received message: message = '{message}')")
+        print(f"Received message in ipfs_model_manager: message = '{message}')")
         recv = json.loads(message)
         results = ""
 
@@ -316,6 +316,7 @@ class ipfs_model_manager():
 
     def on_close(self, ws, arg1, arg2):
         print("Connection closed")
+        self.orbitdb_kit.state["status"] = "closed"
         return ws
 
     def __call__(self, method, **kwargs):
@@ -1998,7 +1999,7 @@ class ipfs_model_manager():
             self.s3_kit.s3_rm_file(file, self.s3cfg["bucket"])
         return None
     
-    async def start(self, **kwargs):
+    def start(self, **kwargs):
         self.load_collection_cache()
         #self.state()
         #self.state(src = "s3")
@@ -2012,20 +2013,43 @@ class ipfs_model_manager():
         self.check_zombies()
         self.check_expired()
         self.check_not_found()
-        await self.orbitdb_kit.connect_orbitdb()
-        return self.loop()
+        # asyncio.run(self.orbitdb_kit.connect_orbitdb())
+        return True
+        return self.loop(self.orbitdb_kit.ws)
 
-    def loop(self, **kwargs):
+    def sync_orbitdb(self, ws, **kwargs):
+        select_all = self.orbitdb_kit.select_all_request(ws)
+        if "status" in list(self.orbitdb_kit.state.keys()):
+            if self.orbitdb_kit.state["status"] == "open":
+                pass
+            else :
+                print("OrbitDB not connected")
+                return False
+                # raise Exception("OrbitDB not connected")
+        else:
+            print("OrbitDB not connected")
+            return False
+            # raise Exception("OrbitDB not connected")
+        
+        for item in self.orbitdb_kit.orbitdb:
+            this_hash = item.hash
+            this_key = item.key
+            this_content = item.content
+            print (this_hash, this_key, this_content)
+            
+
+    def loop(self, ws, **kwargs):
         while True:
             self.loop_sleep = 5
-            self.check_pinned_models()
-            self.check_history_models()
-            self.check_zombies()
-            self.check_expired()
-            self.check_not_found()
-            self.download_missing()
-            self.evict_expired_models()
-            self.evict_zombies()
+            self.sync_orbitdb(ws)
+            # self.check_pinned_models()
+            # self.check_history_models()
+            # self.check_zombies()
+            # self.check_expired()
+            # self.check_not_found()
+            # self.download_missing()
+            # self.evict_expired_models()
+            # self.evict_zombies()
             time.sleep(self.loop_sleep)
         return self
 
@@ -2052,6 +2076,6 @@ class ipfs_model_manager():
 
 if __name__ == '__main__':
     model_manager = ipfs_model_manager()
-    # model_manager.start()
-    
-    asyncio.run(model_manager.start())
+    model_manager.start()
+    asyncio.run(model_manager.orbitdb_kit.connect_orbitdb())
+    asyncio.run(model_manager.loop(model_manager.orbitdb_kit.ws))

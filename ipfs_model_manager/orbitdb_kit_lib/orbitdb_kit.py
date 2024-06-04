@@ -26,6 +26,7 @@ class orbitdb_kit():
         self.key_list = []
         self.key_hash_dict = {}
         self.orbitdb = []
+        self.peers = []
         self.ws = None
         self.url = None
         self.orbitdb_args['ipaddress'] = None
@@ -262,7 +263,7 @@ class orbitdb_kit():
         return self.orbitdb
 
     def on_message(self, ws, message):
-        # print(f"Received message: message = '{message}')")
+        print(f"Received message in orbitdb_kit: message = '{message}')")
         recv = json.loads(message)
         results = ""
 
@@ -373,10 +374,11 @@ class orbitdb_kit():
         return True
     
     def on_open(self, ws, callback_fn = None):
+
         print('connection accepted')
         print("url", self.url)
-        peers = self.peers_ls_request(ws)
-        select_all = self.select_all_request(ws)
+        # peers = self.peers_ls_request(ws)
+        # select_all = self.select_all_request(ws)
         # insert = self.insert_request(ws, {"test": "test document"})
         # update = self.update_request(ws, {"test": "update document"})
         # select = self.select_request(ws, "test")
