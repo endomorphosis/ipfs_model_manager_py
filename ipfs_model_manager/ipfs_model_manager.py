@@ -1998,6 +1998,31 @@ class ipfs_model_manager():
             self.s3_kit.s3_rm_file(file, self.s3cfg["bucket"])
         return None
     
+    async def run_once(self, **kwargs):
+        # await self.orbitdb_kit.connect_once()
+        await self.sync_orbitdb()
+        time.sleep(self.loop_sleep)
+        await self.sync_orbitdb()
+        # await self.orbitdb_kit.disconnect()
+        await self.load_collection_cache()
+        #self.state()
+        #self.state(src = "s3")
+        await self.state(src = "local")
+        #self.state(src = "ipfs")
+        #self.state(src = "orbitdb")
+        #self.state(src = "https")
+        self.check_pinned_models()
+        self.check_history_models()
+        # self.rand_history()
+        self.check_zombies()
+        self.check_expired()
+        self.check_not_found()
+
+        return True
+    
+    async def run_forever(self, **kwargs):
+        return True
+
     async def start(self, **kwargs):
         self.load_collection_cache()
         #self.state()
@@ -2012,7 +2037,7 @@ class ipfs_model_manager():
         self.check_zombies()
         self.check_expired()
         self.check_not_found()
-        return await self.loop(self.orbitdb_kit.ws)
+        return await self.loop()
 
     async def sync_orbitdb(self,ws, **kwargs):
         # select_all = self.orbitdb_kit.select_all_request(ws)
@@ -2076,6 +2101,6 @@ class ipfs_model_manager():
 
 if __name__ == '__main__':
     model_manager = ipfs_model_manager()
+    asyncio.run(model_manager.run_once())
     # model_manager.start()
-    asyncio.run(model_manager.start())
     ### NOTE: SPLIT THE FUNCTIONALITY BETWEEN RUN ONCE AND RUN FOREVER
