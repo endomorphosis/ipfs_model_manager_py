@@ -1291,6 +1291,10 @@ class ipfs_model_manager():
             if "timestamp" in self.https_collection["cache"]:
                 https_timestamp = self.https_collection["cache"]["timestamp"]
                 timestamps["https"] = https_timestamp
+        if type(self.orbitdb_collection) == dict and "cache" in self.orbitdb_collection:
+            if "timestamp" in self.orbitdb_collection["cache"]:
+                orbitdb_timestamp = self.orbitdb_collection["cache"]["timestamp"]
+                timestamps["orbitdb"] = orbitdb_timestamp 
 
         if len(timestamps.keys()) != 0:
             newest = max(timestamps, key=timestamps.get)
@@ -1302,6 +1306,8 @@ class ipfs_model_manager():
                 this_collection = self.ipfs_collection
             elif newest == "https":
                 this_collection = self.https_collection
+            elif newest == "orbitdb":
+                this_collection = self.orbitdb_collection
         else:
             if "error" not in self.local_collection:
                 this_collection = self.local_collection
@@ -1311,6 +1317,8 @@ class ipfs_model_manager():
                 this_collection = self.https_collection
             elif "error" not in self.ipfs_collection:
                 this_collection = self.ipfs_collection
+            elif "error" not in self.orbitdb_collection:
+                this_collection = self.orbitdb_collection
 
         for model in ls_models:
             if model in this_collection and model != "cache" and model != "error":
@@ -1340,6 +1348,13 @@ class ipfs_model_manager():
                     s3_models[model] = results
                 else:
                     pass
+            elif model in self.orbitdb_collection and model != "cache" and model != "error":
+                this_folder_data = self.orbitdb_collection[model]["folderData"]
+                results = self.check_s3(self.orbitdb_collection[model])
+                if results != None and results is not False:
+                    s3_models[model] = results
+                else:
+                    pass
 
         self.s3_models = s3_models
         return s3_models  
@@ -1365,6 +1380,10 @@ class ipfs_model_manager():
             if "timestamp" in self.https_collection["cache"]:
                 https_timestamp = self.https_collection["cache"]["timestamp"]
                 timestamps["https"] = https_timestamp
+        if type(self.orbitdb_collection) == dict and "cache" in self.orbitdb_collection:
+            if "timestamp" in self.orbitdb_collection["cache"]:
+                orbitdb_timestamp = self.orbitdb_collection["cache"]["timestamp"]
+                timestamps["orbitdb"] = orbitdb_timestamp 
 
         if len(timestamps.keys()) != 0:
             newest = max(timestamps, key=timestamps.get)
@@ -1376,6 +1395,8 @@ class ipfs_model_manager():
                 this_collection = self.ipfs_collection
             elif newest == "https":
                 this_collection = self.https_collection
+            elif newest == "orbitdb":
+                this_collection = self.orbitdb_collection
         else:
             if "error" not in self.local_collection:
                 this_collection = self.local_collection
@@ -1385,6 +1406,8 @@ class ipfs_model_manager():
                 this_collection = self.https_collection
             elif "error" not in self.ipfs_collection:
                 this_collection = self.ipfs_collection
+            elif "error" not in self.orbitdb_collection:
+                this_collection = self.orbitdb_collection
 
         for model in ls_models:
             if model in this_collection and model != "cache" and model != "error":
@@ -1427,7 +1450,13 @@ class ipfs_model_manager():
                         https_models[model] = results
                     else:
                         pass
-                
+            elif model in self.orbitdb_collection and model != "cache" and model != "error":
+                this_folder_data = self.orbitdb_collection[model]["folderData"]
+                results = self.check_s3(self.orbitdb_collection[model])
+                if results != None and results is not False:
+                    https_models[model] = results
+                else:
+                    pass
 
         self.https_models = https_models
         return https_models  
@@ -1453,6 +1482,10 @@ class ipfs_model_manager():
             if "timestamp" in self.https_collection["cache"]:
                 https_timestamp = self.https_collection["cache"]["timestamp"]
                 timestamps["https"] = https_timestamp
+        if type(self.orbitdb_collection) == dict and "cache" in self.orbitdb_collection:
+            if "timestamp" in self.orbitdb_collection["cache"]:
+                orbitdb_timestamp = self.orbitdb_collection["cache"]["timestamp"]
+                timestamps["orbitdb"] = orbitdb_timestamp 
 
         if len(timestamps.keys()) != 0:
             newest = max(timestamps, key=timestamps.get)
@@ -1464,6 +1497,8 @@ class ipfs_model_manager():
                 this_collection = self.ipfs_collection
             elif newest == "https":
                 this_collection = self.https_collection
+            elif newest == "orbitdb":
+                this_collection = self.orbitdb_collection
         else:
             if "error" not in self.local_collection:
                 this_collection = self.local_collection
@@ -1473,7 +1508,8 @@ class ipfs_model_manager():
                 this_collection = self.https_collection
             elif "error" not in self.ipfs_collection:
                 this_collection = self.ipfs_collection
-
+            elif "error" not in self.orbitdb_collection:
+                this_collection = self.orbitdb_collection
 
         for model in ls_models:
             if model in list(this_collection.keys()) and model != "cache" and model != "error":
@@ -1508,6 +1544,13 @@ class ipfs_model_manager():
                 this_folder_data = self.https_collection[model]["folderData"]
                 results = self.check_ipfs(self.https_collection[model])
                 if results is not None and results is not False:
+                    ipfs_models[model] = results
+                else:
+                    pass
+            elif model in self.orbitdb_collection and model != "cache" and model != "error":
+                this_folder_data = self.orbitdb_collection[model]["folderData"]
+                results = self.check_s3(self.orbitdb_collection[model])
+                if results != None and results is not False:
                     ipfs_models[model] = results
                 else:
                     pass
@@ -1999,18 +2042,22 @@ class ipfs_model_manager():
         return None
     
     async def run_once(self, **kwargs):
-        # await self.orbitdb_kit.connect_once()
-        await self.sync_orbitdb()
-        time.sleep(self.loop_sleep)
-        await self.sync_orbitdb()
-        # await self.orbitdb_kit.disconnect()
-        await self.load_collection_cache()
+        await self.orbitdb_kit.connect_orbitdb()
+        await self.orbitdb_kit.run_once()       
+        self.orbitdb_kit.ws.send({'peers':'ls'})
+        results1 = self.orbitdb_kit.on_message(self.orbitdb_kit.ws, self.orbitdb_kit.ws.recv())
+        self.orbitdb_kit.ws.send({'select_all': '*'})
+        results2 = self.orbitdb_kit.on_message(self.orbitdb_kit.ws, self.orbitdb_kit.ws.recv())
+        self.load_collection_cache()
+        await self.sync_orbitdb(self.orbitdb_kit.ws)
+
         #self.state()
         #self.state(src = "s3")
-        await self.state(src = "local")
+        self.state(src = "local")
         #self.state(src = "ipfs")
         #self.state(src = "orbitdb")
         #self.state(src = "https")
+        #self.state(src = "orbitdb")
         self.check_pinned_models()
         self.check_history_models()
         # self.rand_history()
@@ -2040,25 +2087,40 @@ class ipfs_model_manager():
         return await self.loop()
 
     async def sync_orbitdb(self,ws, **kwargs):
-        # select_all = self.orbitdb_kit.select_all_request(ws)
-        # if "status" in list(self.orbitdb_kit.state.keys()):
-        #     if self.orbitdb_kit.state["status"] == "open":
-        #         pass
-        #     else :
-        #         print("OrbitDB not connected")
-        #         return False
-        #         # raise Exception("OrbitDB not connected")
-        # else:
-        #     print("OrbitDB not connected")
-        #     return False
-        #     # raise Exception("OrbitDB not connected")
         
         for item in self.orbitdb_kit.orbitdb:
-            this_hash = item.hash
-            this_key = item.key
-            this_content = item.content
-            print (this_hash, this_key, this_content)
+            this_hash = item['hash']
+            this_key = item['key']
+            this_content = item['value']['content']
+            if this_content[0] == '{':
+                this_content = json.loads(this_content)
+            self.orbitdb_collection[this_key] = this_content
+
+        for item in self.collection:
+            if item not in list(self.orbitdb_collection.keys()) and item != "cache":
+                self.orbitdb_kit.insert_request(ws, {item: json.dumps(self.collection[item])})
+                self.orbitdb_collection[item] = self.collection[item]
+
+        for item in self.orbitdb_collection:
+            value = self.orbitdb_collection[item]
+            if item not in list(self.collection.keys()):
+                if(self.verify_merge_from_orbitdb()):
+                    self.collection_cache[item] = self.orbitdb_collection[item]
             
+            if item in self.collection:
+                collection_hash = json.dumps(self.collection[item])
+                orbitdb_collection_hash = json.dumps(self.orbitdb_collection[item])
+                if self.collection[item] != self.orbitdb_collection[item] or collection_hash != orbitdb_collection_hash:
+                    if (self.verify_merge_to_orbitdb()):
+                        self.orbitdb_kit.update_request(ws, item, self.collection[item])
+        return True
+
+
+    def verify_merge_to_orbitdb(self, **kwargs):
+        return False
+            
+    def verify_merge_from_orbitdb(self, **kwargs):
+        return False
 
     async def loop(self, ws,**kwargs):
         self.loop_sleep = 5

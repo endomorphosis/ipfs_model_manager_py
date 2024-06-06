@@ -61,7 +61,7 @@ class WebSocketClient:
 		self.ws.close()
 		return True
 
-	def run_forever(self, master_url, interval=10, timeout=2):
+	def run_forever(self, master_url, interval=15, timeout=2):
 		this_master_url = None
 		if master_url is None and self.master_url is None:
 			raise ValueError('master_url is required')

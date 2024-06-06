@@ -148,14 +148,15 @@ class orbitdb_kit():
             return self.ws
         
     async def run_forever(self):
-        self.ws.run_forever(
-            ping_interval=5,
-            ping_timeout=2
-        )
+        self.ws.run_forever()
         self.state = {
             'status': 'disconnected'
         }
         print('connecting to master')
+        return True
+    
+    async def run_once(self):
+        self.ws.run_once()
         return True
     
     async def disconnect_orbitdb(self):
@@ -356,9 +357,9 @@ class orbitdb_kit():
             raise Exception("data must be a dictionary")
         if len(data_keys) != 1:
             raise Exception("data must have exactly one key")
-        ws.send(json.dumps({
+        results = ws.send({
             'insert': data
-        }))
+        })
         return True
     
     def update_request(self, ws, data):

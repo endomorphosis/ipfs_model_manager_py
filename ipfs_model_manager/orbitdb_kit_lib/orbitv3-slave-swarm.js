@@ -230,11 +230,11 @@ async function run(options) {
         const ip = ws._socket.remoteAddress;
         if (ip === '127.0.0.1' || ip === '::ffff:127.0.0.1') {
             console.log('New WebSocket connection');
-            let peers_list = []
-            for(let peer of ipfs.libp2p.peerStore.store.datastore.data){
-                peers_list.push(peer[0])
-            }
-            ws.send(JSON.stringify({ "peers": peers_list }));
+            // let peers_list = []
+            // for(let peer of ipfs.libp2p.peerStore.store.datastore.data){
+            //     peers_list.push(peer[0])
+            // }
+            // ws.send(JSON.stringify({ "peers": peers_list }));
             ws.on('message', (message) => {
                 message = JSON.parse(message.toString());
                 console.log('Received message:', message);
@@ -270,13 +270,12 @@ async function run(options) {
                         let peers_time = {}
                         for (let peer of peers_ls) {
                             let begin = Date.now();
-                            console.log('Pinging peer:', peer[0]);
+                            //console.log('Pinging peer:', peer[0]);
                             peers_list.push(peer[0]);
                             let end = Date.now();
                             peers_time[peer[0]] = end - begin;
                         }
-
-                        console.log('Peers:', peers_list);
+                        //console.log('Peers:', peers_list);
                         ws.send(JSON.stringify({ "peers": peers_list }));
                         break;
 
