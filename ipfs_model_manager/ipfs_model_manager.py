@@ -2050,7 +2050,6 @@ class ipfs_model_manager():
         results2 = self.orbitdb_kit.on_message(self.orbitdb_kit.ws, self.orbitdb_kit.ws.recv())
         self.load_collection_cache()
         await self.sync_orbitdb(self.orbitdb_kit.ws)
-
         #self.state()
         #self.state(src = "s3")
         self.state(src = "local")
@@ -2064,27 +2063,47 @@ class ipfs_model_manager():
         self.check_zombies()
         self.check_expired()
         self.check_not_found()
-
         return True
     
     async def run_forever(self, **kwargs):
-        return True
-
-    async def start(self, **kwargs):
+        await self.orbitdb_kit.connect_orbitdb()
+        await self.orbitdb_kit.run_once()       
+        self.orbitdb_kit.ws.send({'peers':'ls'})
+        results1 = self.orbitdb_kit.on_message(self.orbitdb_kit.ws, self.orbitdb_kit.ws.recv())
+        self.orbitdb_kit.ws.send({'select_all': '*'})
+        results2 = self.orbitdb_kit.on_message(self.orbitdb_kit.ws, self.orbitdb_kit.ws.recv())
         self.load_collection_cache()
+        await self.sync_orbitdb(self.orbitdb_kit.ws)
         #self.state()
         #self.state(src = "s3")
         self.state(src = "local")
         #self.state(src = "ipfs")
         #self.state(src = "orbitdb")
         #self.state(src = "https")
+        #self.state(src = "orbitdb")
         self.check_pinned_models()
         self.check_history_models()
-        self.rand_history()
+        # self.rand_history()
         self.check_zombies()
         self.check_expired()
-        self.check_not_found()
-        return await self.loop()
+        self.check_not_found()        
+        return True
+
+    # async def start(self, **kwargs):
+    #     self.load_collection_cache()
+    #     #self.state()
+    #     #self.state(src = "s3")
+    #     self.state(src = "local")
+    #     #self.state(src = "ipfs")
+    #     #self.state(src = "orbitdb")
+    #     #self.state(src = "https")
+    #     self.check_pinned_models()
+    #     self.check_history_models()
+    #     self.rand_history()
+    #     self.check_zombies()
+    #     self.check_expired()
+    #     self.check_not_found()
+    #     return await self.loop()
 
     async def sync_orbitdb(self,ws, **kwargs):
         
@@ -2122,23 +2141,23 @@ class ipfs_model_manager():
     def verify_merge_from_orbitdb(self, **kwargs):
         return False
 
-    async def loop(self, ws,**kwargs):
-        self.loop_sleep = 5
-        while True:
-            await self.sync_orbitdb(ws)
-            await self.orbitdb_kit.connect_orbitdb()
-            time.sleep(self.loop_sleep)
-            await self.sync_orbitdb(ws)
-            await self.orbitdb_kit.disconnect_orbitdb()
-            # self.check_pinned_models()
-            # self.check_history_models()
-            # self.check_zombies()
-            # self.check_expired()
-            # self.check_not_found()
-            # self.download_missing()
-            # self.evict_expired_models()
-            # self.evict_zombies()
-        return self
+    # async def loop(self, ws,**kwargs):
+    #     self.loop_sleep = 5
+    #     while True:
+    #         await self.sync_orbitdb(ws)
+    #         await self.orbitdb_kit.connect_orbitdb()
+    #         time.sleep(self.loop_sleep)
+    #         await self.sync_orbitdb(ws)
+    #         await self.orbitdb_kit.disconnect_orbitdb()
+    #         # self.check_pinned_models()
+    #         # self.check_history_models()
+    #         # self.check_zombies()
+    #         # self.check_expired()
+    #         # self.check_not_found()
+    #         # self.download_missing()
+    #         # self.evict_expired_models()
+    #         # self.evict_zombies()
+    #     return self
 
     # def test(self, **kwargs):
     #     self.load_collection_cache()

@@ -38,7 +38,11 @@ class WebSocketClient:
 				self.on_close = meta['on_close']
 
 	def run_once(self):
-		self.ws = websocket.create_connection(self.master_url)
+		while True:
+			try:
+				self.ws = websocket.create_connection(self.master_url)
+			except Exception as e:
+				print(e)	
 		return True
 
 	def run_forever(self):

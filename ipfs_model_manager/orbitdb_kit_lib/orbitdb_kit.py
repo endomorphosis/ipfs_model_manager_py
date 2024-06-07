@@ -156,7 +156,8 @@ class orbitdb_kit():
         return True
     
     async def run_once(self):
-        self.ws.run_once()
+        await self.start_orbitdb()
+        await self.ws.run_once()
         return True
     
     async def disconnect_orbitdb(self):
