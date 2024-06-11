@@ -1,4 +1,3 @@
-#from cloudkit_worker import dispatch_result, should_abort, TaskAbortion
 import os
 import sys
 import json
@@ -8,10 +7,10 @@ import tempfile
 import asyncio
 from config import config
 from s3_kit import s3_kit as s3_kit
-from ipfs_kit_lib.ipfs_kit import ipfs_kit as ipfs_kit
-from ipfs_kit_lib.install_ipfs import install_ipfs as install_ipfs
+from ipfs_kit import ipfs_kit as ipfs_kit
+# from ipfs_kit.install_ipfs import install_ipfs as install_ipfs
 from aria2.install_aria2 import install_aria2 as install_aria2
-from orbitdb_kit_lib import orbitdb_kit as orbitdb_kit
+from orbitdb_kit import orbitdb_kit as orbitdb_kit
 import datetime
 import hashlib
 import requests
@@ -170,7 +169,7 @@ class ipfs_model_manager():
         if self.s3cfg is not None and type(self.s3cfg) == dict and self.s3cfg["bucket"] is not None and self.s3cfg["bucket"] != "":
             self.s3_kit = s3_kit(resources, meta = meta)
         self.ipfs_kit = ipfs_kit(resources, meta = meta)
-        self.install_ipfs = install_ipfs(resources, meta = meta)
+        self.install_ipfs = ipfs_kit.install_ipfs(resources, meta = meta)
         ipfs_path = self.ipfs_path
         if not os.path.exists(self.ipfs_path):
             os.makedirs(self.ipfs_path)
