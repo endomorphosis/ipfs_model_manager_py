@@ -5,7 +5,7 @@ import pathlib
 import time
 import tempfile
 import asyncio
-import config
+from .config import config as config
 from .aria2 import aria2 as aria2
 from .s3_kit import s3_kit as s3_kit
 import ipfs_kit
@@ -29,7 +29,7 @@ class ipfs_model_manager:
             local_path='/cloudkit_storage/'
         else:
             local_path = os.path.join(os.path.expanduser("~"),'.cache')
-        self.config = config().loadConfig('./ipfs_model_manager/config/config.toml')
+        self.config = config.loadConfig('./ipfs_model_manager/config/config.toml')
         self.s3cfg = None
         self.ipfs_src = None
         self.timing = None
