@@ -5,8 +5,6 @@ build/
 ipfs_model_manager/
 config.toml
 *config.toml
-config
-config/*
 config/__pycache__/
 config/__pycache__
 __pycache__
