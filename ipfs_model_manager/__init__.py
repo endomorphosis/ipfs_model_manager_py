@@ -5,3 +5,4 @@
 # from .test import test_fio
 # from .test import test_hf_ipfs
 # from .orbitdb_kit_lib import orbitdb_kit_lib
+from .config import config 

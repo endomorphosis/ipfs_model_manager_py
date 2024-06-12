@@ -5,7 +5,7 @@ import pathlib
 import time
 import tempfile
 import asyncio
-from config import config
+from .config import config
 from aria2.install_aria2 import install_aria2 as install_aria2
 from s3_kit import s3_kit as s3_kit
 import ipfs_kit
