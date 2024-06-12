@@ -6,11 +6,10 @@ import time
 import tempfile
 import asyncio
 from config import config
-from s3_kit import s3_kit as s3_kit
-from ipfs_kit import ipfs_kit as ipfs_kit
-# from ipfs_kit.install_ipfs import install_ipfs as install_ipfs
 from aria2.install_aria2 import install_aria2 as install_aria2
-from orbitdb_kit import orbitdb_kit as orbitdb_kit
+from s3_kit import s3_kit as s3_kit
+import ipfs_kit
+import orbitdb_kit
 import datetime
 import hashlib
 import requests
@@ -161,15 +160,26 @@ class ipfs_model_manager():
         meta["on_message"] = self.on_message
         meta["on_error"] = self.on_error
         meta["on_close"] = self.on_close
-        self.orbitdb_kit = orbitdb_kit(
+        self.orbitdb_kit = orbitdb_kit.orbitdb_kit(
             resources,
             meta = meta
         )
+        self.orbitdb_kit.stop_orbitdb()
         self.test_fio = test_fio(None)
         if self.s3cfg is not None and type(self.s3cfg) == dict and self.s3cfg["bucket"] is not None and self.s3cfg["bucket"] != "":
-            self.s3_kit = s3_kit(resources, meta = meta)
-        self.ipfs_kit = ipfs_kit(resources, meta = meta)
-        self.install_ipfs = ipfs_kit.install_ipfs(resources, meta = meta)
+            self.s3_kit = s3_kit(
+                resources,
+                meta = meta
+            )
+            pass
+        self.ipfs_kit = ipfs_kit.ipfs_kit(
+            resources,
+            meta = meta
+        )
+        self.install_ipfs = ipfs_kit.install_ipfs(
+            resources,
+            meta = meta
+        )
         ipfs_path = self.ipfs_path
         if not os.path.exists(self.ipfs_path):
             os.makedirs(self.ipfs_path)
