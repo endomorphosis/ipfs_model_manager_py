@@ -22,7 +22,7 @@ ipfs_lib_dir = os.path.join(parent_dir, "ipfs_kit_lib")
 sys.path.append(ipfs_lib_dir)
 sys.path.append(parent_dir)
 
-class ipfs_model_manager():
+class ipfs_model_manager:
     def __init__(self, resources=None, meta=None):
         local_path = '/'
         if os.geteuid() == 0:
