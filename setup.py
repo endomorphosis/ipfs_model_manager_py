@@ -14,5 +14,20 @@ setup(
 		'requests',
 		'boto3',
         'toml',
-	]
+	],
+    package_data={
+		'ipfs_model_manager': [
+		's3_kit/s3_kit.py',
+        'test/test_fio.py',
+        'test/test_hf_ipfs.py',
+        'config/config.py',
+        'aria2/install_aria2.py',
+        'aria2/aria2c',
+        'config/config_template.toml',
+        'config/__init__.py',
+        'config/config.py',
+		]
+	},
+	include_package_data=True,
+
 )
