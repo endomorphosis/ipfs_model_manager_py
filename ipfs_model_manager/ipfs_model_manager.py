@@ -5,8 +5,9 @@ import pathlib
 import time
 import tempfile
 import asyncio
-from config import config
-from ipfs_model_manager.aria2.aria2 import install_aria2 as install_aria2
+import config
+from .aria2 import aria2 as aria2
+# from ipfs_model_manager.aria2.aria2 import install_aria2 as install_aria2
 from s3_kit import s3_kit as s3_kit
 import ipfs_kit
 import orbitdb_kit
