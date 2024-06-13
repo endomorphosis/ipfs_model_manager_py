@@ -149,8 +149,8 @@ class ipfs_model_manager:
             }
         from .config import config as config
         print(dir(config))
-        self.test_config = config
-        self.config = self.test_config.loadConfig()
+        self.test_config = config(None, meta=meta)
+        self.config = self.test_config.loadConfig(self.test_config.findConfig())
         self.local_path = os.path.join(local_path , "huggingface")
         if len(list(self.config.keys())) > 0:
             for key in list(self.config.keys()):
