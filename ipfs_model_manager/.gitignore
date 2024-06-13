@@ -2,8 +2,6 @@ __pycache__/
 build/
 *.egg-info/
 *.egg/
-config.toml
-*config.toml
 config
 config/*
 config/__pycache__/
