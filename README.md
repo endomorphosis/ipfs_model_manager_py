@@ -32,7 +32,7 @@ QA - Kevin De Haan
 
 # About
 
-This is a model manager and wrapper for huggingface, looks up a index of models from an collection of models, and will download a model from either https/s3/ipfs, depending on which source is the fastest.
+This is a model manager and wrapper for huggingface, and it maintains an index of models from collections of models store retrieved through local/https/s3/ipfs/orbitdb, then maintains a state of which what models are currently accesible, and it will choose what files should be cached through local/s3/ipfs/ based on configuration settings. 
 
 # How to use
 ~~~shell
