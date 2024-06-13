@@ -3,10 +3,10 @@ local_path = "/storage/cloudkit-models"
 ipfs_path = "/storage/ipfs/"
 
 [[PATHS.COLLECTION]]
-"local" = "/storage/cloudkit-models/collection.json",
-"s3" = "s3://cloudkit-beta/collection.json",
-"ipfs" = "QmXBUkLywjKGTWNDMgxknk6FJEYu9fZaEepv3djmnEqEqD",
-"https" = "https://huggingface.co/endomorphosis/cloudkit-collection/resolve/main/collection.json",
+"local" = "/storage/cloudkit-models/collection.json"
+"s3" = "s3://cloudkit-beta/collection.json"
+"ipfs" = "QmXBUkLywjKGTWNDMgxknk6FJEYu9fZaEepv3djmnEqEqD"
+"https" = "https://huggingface.co/endomorphosis/cloudkit-collection/resolve/main/collection.json"
 "orbitdb" = "/orbitdb/zdpuB31L6gJz49erikZSQT3A1erJbid8oUTBrjLtBwjjXe3R5"
 
 [[HF]]
@@ -29,7 +29,7 @@ bootstrap = [
 
 [[IPFS.CLUSTER]]
 clusterName = "cloudkit_storage"
-clusterLocation = "/ip4/167.99.96.231/tcp/9096/p2p/12D3KooWKw9XCkdfnf8CkAseryCgS3VVoGQ6HUAkY91Qc6Fvn4yv",
+clusterLocation = "/ip4/167.99.96.231/tcp/9096/p2p/12D3KooWKw9XCkdfnf8CkAseryCgS3VVoGQ6HUAkY91Qc6Fvn4yv"
 secret = ""
 
 [[IPFS.PEERSTORE]]

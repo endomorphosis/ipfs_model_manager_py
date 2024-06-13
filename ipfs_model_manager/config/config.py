@@ -65,8 +65,7 @@ class config:
                 foundPath = path
         
         print("foundPath: ", foundPath)
-        print(paths)
-
+        # print(paths)
         return foundPath if foundPath != None else None
 
     def loadConfig(self, configPath, overrides = None):
