@@ -1,4 +1,3 @@
-# Scaling Ethereum Hackathon Presents
 IPFS Huggingface Bridge:
 
 for huggingface transformers python library visit:
@@ -6,9 +5,6 @@ https://github.com/endomorphosis/ipfs_transformers/
 
 for huggingface datasets python library visit:
 https://github.com/endomorphosis/ipfs_datasets/
-
-for huggingface transformers python library visit:
-https://github.com/endomorphosis/ipfs_transformers/
 
 for transformers.js visit:                          
 https://github.com/endomorphosis/ipfs_transformers_js
@@ -25,6 +21,11 @@ https://github.com/endomorphosis/ipfs_model_manager_js/
 for nodejs ipfs huggingface scraper with pinning services visit:
 https://github.com/endomorphosis/ipfs_huggingface_scraper/
 
+for ipfs agents visit:
+https://github.com/endomorphosis/ipfs_huggingface_scraper/
+
+for ipfs accelerate visit:
+https://github.com/endomorphosis/ipfs_accelerate/
 
 Author - Benjamin Barber
 QA - Kevin De Haan
