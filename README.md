@@ -22,7 +22,7 @@ for nodejs ipfs huggingface scraper with pinning services visit:
 https://github.com/endomorphosis/ipfs_huggingface_scraper/
 
 for ipfs agents visit:
-https://github.com/endomorphosis/ipfs_huggingface_scraper/
+https://github.com/endomorphosis/ipfs_agents/
 
 for ipfs accelerate visit:
 https://github.com/endomorphosis/ipfs_accelerate/
