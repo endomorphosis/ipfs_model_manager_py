@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
 	name='ipfs_model_manager',
-	version='0.0.6',
+	version='0.0.7',
 	packages=[
 		'ipfs_model_manager',
 	],
@@ -24,6 +24,7 @@ setup(
         'aria2/aria2.py',
         'aria2/aria2c',
         'config/config_template.toml',
+        'config/config.toml',
         'config/__init__.py',
         'config/config.py',
 		]
