@@ -7,7 +7,7 @@ ipfs_path = "/storage/ipfs/"
 "s3" = "s3://cloudkit-beta/collection.json",
 "ipfs" = "QmXBUkLywjKGTWNDMgxknk6FJEYu9fZaEepv3djmnEqEqD",
 "https" = "https://huggingface.co/endomorphosis/cloudkit-collection/resolve/main/collection.json",
-"orbitdb = "/orbitdb/zdpuB31L6gJz49erikZSQT3A1erJbid8oUTBrjLtBwjjXe3R5"
+"orbitdb" = "/orbitdb/zdpuB31L6gJz49erikZSQT3A1erJbid8oUTBrjLtBwjjXe3R5"
 
 [[HF]]
 hf_account_name = "your_account_name"
