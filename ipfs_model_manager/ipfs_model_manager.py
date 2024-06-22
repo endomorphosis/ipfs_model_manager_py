@@ -808,7 +808,9 @@ class ipfs_model_manager:
         check_filenames["/manifest.json"] = True
         if all(check_filenames.values()):
             del check_filenames["/manifest.json"]
-            oldest_file_timestamp = min(check_filenames.values())
+            oldest_file_timestamp = None
+            if check_filenames.values() != None and len(check_filenames.values()) > 0:
+                oldest_file_timestamp = min(check_filenames.values())
             return oldest_file_timestamp
         else:
             return False
@@ -2194,7 +2196,8 @@ class ipfs_model_manager:
     #     return self
 
 if __name__ == '__main__':
-    model_manager = ipfs_model_manager()
-    asyncio.run(model_manager.run_once())
+    # model_manager = ipfs_model_manager()
+    # asyncio.run(model_manager.run_once())
     # model_manager.start()
     ### NOTE: SPLIT THE FUNCTIONALITY BETWEEN RUN ONCE AND RUN FOREVER
+    pass
