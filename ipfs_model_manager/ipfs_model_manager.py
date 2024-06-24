@@ -2095,6 +2095,8 @@ class ipfs_model_manager:
         self.check_zombies()
         self.check_expired()
         self.check_not_found()
+        self.orbitdb_kit.stop_orbitdb()
+        self.orbitdb_kit.ws.close()
         return True
     
     async def run_forever(self, **kwargs):
