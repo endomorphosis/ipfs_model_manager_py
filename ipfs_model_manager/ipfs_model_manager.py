@@ -645,6 +645,18 @@ class ipfs_model_manager:
             "https": https_timestamp,
             "orbitdb": orbitdb_timestamp
         }
+        
+        print(timestamps)
+        print("len of local collection")
+        print(len(self.local_collection))
+        print("len of s3 collection")
+        print(len(self.s3_collection))
+        print("len of ipfs collection")
+        print(len(self.ipfs_collection))
+        print("len of https collection")
+        print(len(self.https_collection))
+        print("len of orbitdb collection")
+        print(len(self.orbitdb_collection))
 
         if not all(value is None for value in timestamps.values()):
             timestamps = {k: v for k, v in timestamps.items() if v is not None}    
@@ -2074,6 +2086,7 @@ class ipfs_model_manager:
         port_scan_results = subprocess.check_output(port_scan_cmd, shell=True).decode('utf-8').strip()
         while port_scan_results == "":
             port_scan_results = subprocess.check_output(port_scan_cmd, shell=True).decode('utf-8').strip()
+        time.sleep(10)
         await self.orbitdb_kit.connect_orbitdb()
         await self.orbitdb_kit.run_once()
         self.orbitdb_kit.ws.send({'peers':'ls'})
@@ -2081,6 +2094,7 @@ class ipfs_model_manager:
         self.orbitdb_kit.ws.send({'select_all': '*'})
         results2 = self.orbitdb_kit.on_message(self.orbitdb_kit.ws, self.orbitdb_kit.ws.recv())
         self.load_collection_cache()
+        self.load_collection()
         await self.sync_orbitdb(self.orbitdb_kit.ws)
         #self.state()
         #self.state(src = "s3")
@@ -2095,8 +2109,6 @@ class ipfs_model_manager:
         self.check_zombies()
         self.check_expired()
         self.check_not_found()
-        self.orbitdb_kit.stop_orbitdb()
-        self.orbitdb_kit.ws.close()
         return True
     
     async def run_forever(self, **kwargs):
