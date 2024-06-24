@@ -5,8 +5,16 @@ import pathlib
 import time
 import tempfile
 import asyncio
-from .aria2 import aria2 as aria2
-from .s3_kit import s3_kit as s3_kit
+
+try:
+    from .aria2 import aria2 as aria2
+except:
+    from aria2 import aria2 as aria2
+try:
+    from .s3_kit import s3_kit as s3_kit
+except:
+    from s3_kit import s3_kit as s3_kit
+
 import ipfs_kit
 import orbitdb_kit
 import datetime
@@ -2057,8 +2065,17 @@ class ipfs_model_manager:
         return None
     
     async def run_once(self, **kwargs):
+        port_scan_cmd = "lsof -i -P -n | grep LISTEN | grep 50001 | awk '{print $2}'"
+        port_scan_results = subprocess.check_output(port_scan_cmd, shell=True).decode('utf-8').strip()
+        if port_scan_results != "":
+            kill_cmd = "kill -9 " + port_scan_results
+            kill = subprocess.check_output(kill_cmd, shell=True)
+        await self.orbitdb_kit.start_orbitdb()
+        port_scan_results = subprocess.check_output(port_scan_cmd, shell=True).decode('utf-8').strip()
+        while port_scan_results == "":
+            port_scan_results = subprocess.check_output(port_scan_cmd, shell=True).decode('utf-8').strip()
         await self.orbitdb_kit.connect_orbitdb()
-        await self.orbitdb_kit.run_once()       
+        await self.orbitdb_kit.run_once()
         self.orbitdb_kit.ws.send({'peers':'ls'})
         results1 = self.orbitdb_kit.on_message(self.orbitdb_kit.ws, self.orbitdb_kit.ws.recv())
         self.orbitdb_kit.ws.send({'select_all': '*'})
