@@ -616,17 +616,23 @@ class ipfs_model_manager:
         if type(self.s3_collection) == dict  and "cache" in list(self.s3_collection.keys()):
             if "timestamp" in self.s3_collection["cache"]:
                 s3_timestamp = self.s3_collection["cache"]["timestamp"]
-            if s3_timestamp is None:
+                pass
+            if s3_timestamp is None and self.collection_cache is not None and "s3" in list(self.collection_cache.keys()) and self.collection_cache["s3"] is not None:
                 s3_timestamp = self.s3_kit.s3_ls_file(self.collection_cache["s3"].split("/")[-1], self.collection_cache["s3"].split("/")[-2])
                 key = list(s3_timestamp.keys())[0]
                 s3_timestamp = s3_timestamp[key]["last_modified"]
                 pass
+            if s3_timestamp is None or self.collection_cache is None or "s3" not in list(self.collection_cache.keys()) or self.collection_cache["s3"] is None:
+                s3_timestamp = datetime.datetime.now().timestamp()
+                pass
         if type(self.local_collection) == dict and "cache" in list(self.local_collection.keys()):
             if "timestamp" in self.local_collection["cache"]:
                 local_timestamp = self.local_collection["cache"]["timestamp"]
-            if local_timestamp is None:
+            if local_timestamp is None and self.collection_cache is not None and "local" not in list(self.collection_cache.keys()) and self.collection_cache["local"] is not None:
                 local_timestamp = os.path.getmtime(self.collection_cache["local"])
                 pass
+            if local_timestamp is None or self.collection_cache is None or "local" not in list(self.collection_cache.keys()) or self.collection_cache["local"] is None:
+                local_timestamp = datetime.datetime.now().timestamp()
         if type(self.https_collection) == dict and "cache" in list(self.https_collection.keys()):
             if "timestamp" in self.https_collection["cache"]:
                 https_timestamp = self.https_collection["cache"]["timestamp"]
