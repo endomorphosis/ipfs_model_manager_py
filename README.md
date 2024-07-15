@@ -51,8 +51,6 @@ models.import_collection(collection)
 models.state()
 ~~~
 
-~~~
-
 # IPFS Huggingface Bridge:
 
 for huggingface transformers python library visit:
