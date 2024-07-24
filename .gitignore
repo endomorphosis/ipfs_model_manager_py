@@ -12,3 +12,5 @@ ipfs_model_manager.egg-info
 ipfs_model_manager.egg-info/
 orbitdb
 ipfs
+dist/
+build/
