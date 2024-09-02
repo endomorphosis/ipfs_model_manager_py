@@ -1,14 +1,16 @@
 from setuptools import setup
 
 setup(
-	name='ipfs_model_manager',
-	version='0.0.12',
+	name='ipfs_model_manage_py',
+	version='0.0.13',
 	packages=[
-		'ipfs_model_manager',
+		'ipfs_model_manager_py',
 	],
 	install_requires=[
-        'ipfs_kit@git+https://github.com/endomorphosis/ipfs_kit.git',
-        'orbitdb_kit@git+https://github.com/endomorphosis/orbitdb_kit.git',
+        'ipfs_kit_py',
+        'orbitdb_kit_py',
+        'libp2p_kit_py',
+        'ipfs_datasets_py',
 		'datasets',
 		'urllib3',
 		'requests',
@@ -16,7 +18,7 @@ setup(
         'toml',
 	],
     package_data={
-		'ipfs_model_manager': [
+		'ipfs_model_manager_py': [
 		's3_kit/s3_kit.py',
         'test/test_fio.py',
         'test/test_hf_ipfs.py',
