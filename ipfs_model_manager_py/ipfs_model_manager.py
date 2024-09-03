@@ -15,8 +15,8 @@ try:
 except:
     from s3_kit import s3_kit as s3_kit
 
-import ipfs_kit
-import orbitdb_kit
+import ipfs_kit_py
+import orbitdb_kit_py
 import datetime
 import hashlib
 import requests
@@ -172,7 +172,7 @@ class ipfs_model_manager:
         meta["on_message"] = self.on_message
         meta["on_error"] = self.on_error
         meta["on_close"] = self.on_close
-        self.orbitdb_kit = orbitdb_kit.orbitdb_kit(
+        self.orbitdb_kit = orbitdb_kit_py.orbitdb_kit(
             resources,
             meta = meta
         )
@@ -184,11 +184,11 @@ class ipfs_model_manager:
                 meta = meta
             )
             pass
-        self.ipfs_kit = ipfs_kit.ipfs_kit(
+        self.ipfs_kit = ipfs_kit_py.ipfs_kit(
             resources,
             meta = meta
         )
-        self.install_ipfs = ipfs_kit.install_ipfs(
+        self.install_ipfs = ipfs_kit_py.install_ipfs(
             resources,
             meta = meta
         )
@@ -208,7 +208,9 @@ class ipfs_model_manager:
                 os.system("apt-get update")
                 os.system("apt-get install aria2")
             else:
-                install_aria2().install()
+                raise Exception("aria2c not installed")
+                # self.ipfs_kit.install_ipfs.install_aria2()
+                # self.install_aria2().install()
                 pass
         # NOTE there is no systemctl daemon reload.
         # NOTE: Changed or to and in this if so install only runs if there is no ipfs in any of the possible locations

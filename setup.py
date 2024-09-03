@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
 	name='ipfs_model_manager_py',
-	version='0.0.13',
+	version='0.0.14',
 	packages=[
 		'ipfs_model_manager_py',
 	],
