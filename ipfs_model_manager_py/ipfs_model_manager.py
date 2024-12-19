@@ -189,21 +189,24 @@ class ipfs_model_manager:
         metadata["on_error"] = self.on_error
         metadata["on_close"] = self.on_close
         # self.orbitdb_kit = orbitdb_kit_py.orbitdb_kit(
-        #     resources,
+        #     resources = resources,
         #     metadata = metadata
         # )
         # self.orbitdb_kit.stop_orbitdb()
         self.test_fio = test_fio(None)
         if self.s3cfg is not None and type(self.s3cfg) == dict and self.s3cfg["bucket"] is not None and self.s3cfg["bucket"] != "":
             self.s3_kit = s3_kit(
-                resources,
+                resources = resources,
                 metadata = metadata
             )
             pass
-        self.ipfs_kit = ipfs_kit_py.ipfs_kit(
-            resources,
-            metadata = metadata
-        )
+        if "ipfs_kit" in list(resources.keys()):
+            self.ipfs_kit = resources["ipfs_kit"]
+        else:
+            self.ipfs_kit = ipfs_kit_py.ipfs_kit(
+                resources = resources,
+                metadata = metadata
+            )
         self.install_ipfs = ipfs_kit_py.install_ipfs(
             resources,
             metadata = metadata
