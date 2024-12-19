@@ -5,6 +5,7 @@ import pathlib
 import time
 import tempfile
 import asyncio
+import ctypes
 
 try:
     from .aria2 import aria2 as aria2
@@ -16,7 +17,7 @@ except:
     from s3_kit import s3_kit as s3_kit
 
 import ipfs_kit_py
-import orbitdb_kit_py
+# import orbitdb_kit_py
 import datetime
 import hashlib
 import requests
@@ -30,12 +31,21 @@ sys.path.append(ipfs_lib_dir)
 sys.path.append(parent_dir)
 
 class ipfs_model_manager:
-    def __init__(self, resources=None, meta=None):
-        local_path = '/'
-        if os.geteuid() == 0:
-            local_path='/cloudkit_storage/'
+    def __init__(self, resources=None, metadata=None):
+        if os.name == 'nt':
+            try:
+                is_admin = ctypes.windll.shell32.IsUserAnAdmin()
+            except:
+                is_admin = False
+            if is_admin:
+                local_path = 'C:\\cloudkit_storage\\'
+            else:
+                local_path = os.path.join(os.path.expanduser("~"), 'AppData', 'Local', 'cache')
         else:
-            local_path = os.path.join(os.path.expanduser("~"),'.cache')
+            if os.geteuid() == 0:
+                local_path = '/cloudkit_storage/'
+            else:
+                local_path = os.path.join(os.path.expanduser("~"), '.cache')
             pass
 
         self.s3cfg = None
@@ -66,13 +76,13 @@ class ipfs_model_manager:
         self.this_model_name = None
         self.s3cfg = None
         self.orbitdb_kit = None
-        if meta is not None and type (meta) == dict:
-            if "s3cfg" in meta:
-                self.s3cfg = meta["s3cfg"]
-            if "ipfs_src" in meta:
-                self.ipfs_src = meta["ipfs_src"]
-            if "timing" in meta:
-                self.timing = meta["timing"]
+        if metadata is not None and type (metadata) == dict:
+            if "s3cfg" in metadata:
+                self.s3cfg = metadata["s3cfg"]
+            if "ipfs_src" in metadata:
+                self.ipfs_src = metadata["ipfs_src"]
+            if "timing" in metadata:
+                self.timing = metadata["timing"]
             else:
                 self.timing = { 
                     "local_time": 0,
@@ -80,35 +90,41 @@ class ipfs_model_manager:
                     "s3_time": 0,
                     "https_time": 0,
                     }
-            if "cache" in meta:
-                self.collection_cache = meta["cache"]
-            if "history" in meta:
-                self.model_history = meta["history"]
+            if "cache" in metadata:
+                self.collection_cache = metadata["cache"]
+            if "history" in metadata:
+                self.model_history = metadata["history"]
             else:
                 self.model_history = {}
-            if "role" in meta:
-                self.role = meta["role"]
+            if "role" in metadata:
+                self.role = metadata["role"]
             else:
                 self.role = "leecher"
-            if "cluster_name" in meta:
-                self.cluster_name = meta["cluster_name"]
+            if "cluster_name" in metadata:
+                self.cluster_name = metadata["cluster_name"]
             else:
                 self.cluster_name = "cloudkit_storage"
-            if "ipfs_path" in meta and meta["ipfs_path"] != "" and os.path.exists(meta["ipfs_path"]):
-                self.ipfs_path = meta["ipfs_path"]
+            if "ipfs_path" in metadata and metadata["ipfs_path"] != "" and os.path.exists(metadata["ipfs_path"]):
+                self.ipfs_path = metadata["ipfs_path"]
             else:
                 self.ipfs_path = os.path.join(self.local_path , "ipfs")
-            if "local_path" in meta and meta["local_path"] != "" and os.path.exists(meta["local_path"]):
-                self.local_path = meta["local_path"]
+            if "local_path" in metadata and metadata["local_path"] != "" and os.path.exists(metadata["local_path"]):
+                self.local_path = metadata["local_path"]
             else:
                 self.local_path = os.path.join(local_path, "huggingface", "hub")
-            if "s3_cfg" in meta:
-                self.s3cfg = meta["s3_cfg"]
-            meta = {
-                "local_path": self.local_path,
-                "ipfs_path": self.ipfs_path,
-                "s3_cfg": self.s3cfg,
-                "role": self.role,
+            if "s3_cfg" in metadata:
+                self.s3cfg = metadata["s3_cfg"]
+            if os.name == 'nt':
+                if is_admin:
+                    self.ipfs_path = "C:\\ipfs\\"
+                else:
+                    self.ipfs_path = os.path.join(os.path.join(os.path.expanduser("~"), 'AppData', 'Local', 'cache'), 'ipfs') + "\\"
+            else:
+                if os.geteuid() == 0:
+                    self.ipfs_path = "/ipfs/"
+                else:
+                    self.ipfs_path = os.path.join(os.path.join(os.path.expanduser("~"), '.cache'), 'ipfs') + "/"
+            metadata = {
                 "cluster_name": self.cluster_name,
                 "cache": self.cache,
             }
@@ -147,7 +163,7 @@ class ipfs_model_manager:
                 }
             else:
                 self.collection_cache = self.cache
-            meta = {
+            metadata = {
                 "local_path": self.local_path,
                 "ipfs_path": self.ipfs_path,
                 "s3_cfg": self.s3cfg,
@@ -155,42 +171,42 @@ class ipfs_model_manager:
                 "cluster_name": self.cluster_name,
                 "cache": self.cache,
             }
-        from .config import config as config
-        print(dir(config))
-        self.test_config = config(None, meta=meta)
-        self.config = self.test_config.loadConfig(self.test_config.findConfig())
-        self.local_path = os.path.join(local_path , "huggingface")
-        if len(list(self.config.keys())) > 0:
-            for key in list(self.config.keys()):
-                if meta == None:
-                    meta = {}
-                meta[key.lower()] = self.config[key]
+        # from config import config as config
+        # print(dir(config))
+        # self.test_config = config(None, metadata=metadata)
+        # self.config = self.test_config.loadConfig(self.test_config.findConfig())
+        # self.local_path = os.path.join(local_path , "huggingface")
+        # if len(list(self.config.keys())) > 0:
+        #     for key in list(self.config.keys()):
+        #         if metadata == None:
+        #             metadata = {}
+        #         metadata[key.lower()] = self.config[key]
 
         homedir = os.path.expanduser("~")
         homedir_files = os.listdir(homedir)
-        meta["on_open"] = self.on_open
-        meta["on_message"] = self.on_message
-        meta["on_error"] = self.on_error
-        meta["on_close"] = self.on_close
-        self.orbitdb_kit = orbitdb_kit_py.orbitdb_kit(
-            resources,
-            meta = meta
-        )
-        self.orbitdb_kit.stop_orbitdb()
+        metadata["on_open"] = self.on_open
+        metadata["on_message"] = self.on_message
+        metadata["on_error"] = self.on_error
+        metadata["on_close"] = self.on_close
+        # self.orbitdb_kit = orbitdb_kit_py.orbitdb_kit(
+        #     resources,
+        #     metadata = metadata
+        # )
+        # self.orbitdb_kit.stop_orbitdb()
         self.test_fio = test_fio(None)
         if self.s3cfg is not None and type(self.s3cfg) == dict and self.s3cfg["bucket"] is not None and self.s3cfg["bucket"] != "":
             self.s3_kit = s3_kit(
                 resources,
-                meta = meta
+                metadata = metadata
             )
             pass
         self.ipfs_kit = ipfs_kit_py.ipfs_kit(
             resources,
-            meta = meta
+            metadata = metadata
         )
         self.install_ipfs = ipfs_kit_py.install_ipfs(
             resources,
-            meta = meta
+            metadata = metadata
         )
         ipfs_path = self.ipfs_path
         if not os.path.exists(self.ipfs_path):
@@ -265,7 +281,7 @@ class ipfs_model_manager:
         print('connection accepted')
         print("websocket url", self.orbitdb_kit.url)
         peers = self.orbitdb_kit.peers_ls_request(ws)
-        select_all = self.orbitdb_kit.select_all_request(ws)
+        # select_all = self.orbitdb_kit.select_all_request(ws)
         self.orbitdb_kit.state["status"] = "open"
         #insert = self.orbitdb_kit.insert_request(ws, {"test": "test document"})
         # update = self.update_request(ws, {"test": "update document"})
