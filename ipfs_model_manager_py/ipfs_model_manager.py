@@ -23,7 +23,7 @@ import hashlib
 import requests
 import shutil
 import random
-from test_fio import test_fio as test_fio 
+from .test_fio import test_fio as test_fio 
 import subprocess
 parent_dir = os.path.dirname(os.path.dirname(__file__))
 ipfs_lib_dir = os.path.join(parent_dir, "ipfs_kit_lib")
